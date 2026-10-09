@@ -23,7 +23,9 @@ public class AppDbContext : DbContext
     // ===== MODULE 3 - Lê Trường Giang =====
 
     // ===== MODULE 4 - Lê Hoàng Anh =====
-
+    public DbSet<PhanCongXuLy> PhanCongXuLys { get; set; }
+    public DbSet<CongDoanXuLy> CongDoanXuLys { get; set; }
+    public DbSet<GiaoTra> GiaoTras { get; set;  }
     // ===== MODULE 5 - Lê Duy Khánh =====
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
