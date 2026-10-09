@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<TaiKhoan> TaiKhoans { get; set; }
     public DbSet<LoaiDo> LoaiDos { get; set; }
     public DbSet<DonViTinh> DonViTinhs { get; set; }
+    public DbSet<ThanhToan> ThanhToans { get; set; }
+    public DbSet<KhieuNai> KhieuNais { get; set; }
 
     // ===== MODULE 2 - Nghiêm Xuân Bằng =====
 
