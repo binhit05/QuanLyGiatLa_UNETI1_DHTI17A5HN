@@ -1,4 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Họ và tên: Lê Hoàng Anh
+// Mã sinh viên: 23103100214
+// Nội dung thực hiện: Tạo Entity PhanCongXuLy
+
+using System.ComponentModel.DataAnnotations;
 using System;
 
 namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
