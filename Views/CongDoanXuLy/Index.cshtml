@@ -1,0 +1,118 @@
+﻿@model IEnumerable<QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.CongDoanXuLy>
+
+@{
+    ViewData["Title"] = "Quản lý công đoạn xử lý";
+}
+
+<h2>Quản lý công đoạn xử lý</h2>
+
+@if (TempData["ThongBao"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["ThongBao"]
+    </div>
+}
+
+@if (TempData["Loi"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Loi"]
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Mã công đoạn</th>
+                <th>Mã đơn giặt</th>
+                <th>Tên công đoạn</th>
+                <th>Mã nhân viên</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.MaCongDoan</td>
+                        <td>@item.MaDonGiat</td>
+                        <td>@item.TenCongDoan</td>
+                        <td>@item.MaNhanVien</td>
+
+                        <td>
+                            @(item.ThoiGianBatDau?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                        </td>
+
+                        <td>
+                            @(item.ThoiGianKetThuc?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                        </td>
+
+                        <td>@item.TrangThai</td>
+                        <td>@(item.GhiChu ?? "-")</td>
+
+                        <td>
+                            @if (item.TrangThai ==
+                                QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.TrangThaiCongDoan.ChuaBatDau)
+                            {
+                                <form asp-action="BatDau"
+                                      asp-route-id="@item.MaCongDoan"
+                                      method="post"
+                                      class="mb-1">
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Bắt đầu
+                                    </button>
+                                </form>
+                            }
+                            else if (item.TrangThai ==
+                                QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.TrangThaiCongDoan.DangXuLy)
+                            {
+                                <form asp-action="HoanThanh"
+                                      asp-route-id="@item.MaCongDoan"
+                                      method="post"
+                                      class="mb-1">
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm">
+                                        Hoàn thành
+                                    </button>
+                                </form>
+                            }
+
+                            @if (item.TrangThai !=
+                                    QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.TrangThaiCongDoan.HoanThanh
+                                && item.TrangThai !=
+                                    QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.TrangThaiCongDoan.DaHuy)
+                            {
+                                <form asp-action="Huy"
+                                      asp-route-id="@item.MaCongDoan"
+                                      method="post"
+                                      onsubmit="return confirm('Bạn có chắc muốn hủy công đoạn này?');">
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm">
+                                        Hủy
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="9" class="text-center">
+                        Chưa có công đoạn xử lý nào.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
