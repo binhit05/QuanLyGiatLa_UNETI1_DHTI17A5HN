@@ -1,0 +1,92 @@
+@* Họ và tên: Lê Duy Khánh *@
+@* Mã sinh viên: 23103100216 *@
+@* Nội dung thực hiện: View chi tiết thanh toán và tình hình thanh toán của đơn *@
+@model QuanLyGiatLa_UNETI1_DHTI17A5HN.ViewModels.ThanhToanDetailsViewModel
+@using System.Globalization
+@using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+@{
+    ViewData["Title"] = "Chi tiết thanh toán";
+    var vn = new CultureInfo("vi-VN");
+    var tt = Model.ThanhToan;
+    string mauBadge = Model.TrangThaiThanhToan switch
+    {
+        TrangThaiThanhToan.DaThanhToan => "bg-success",
+        TrangThaiThanhToan.ThanhToanMotPhan => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+}
+
+<h1 class="h3 mb-3">Chi tiết thanh toán #@tt.MaThanhToan</h1>
+
+@if (TempData["ThongBao"] != null)
+{
+    <div class="alert alert-success">@TempData["ThongBao"]</div>
+}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Khoản thanh toán</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Đơn giặt</dt>
+                    <dd class="col-sm-7">#@tt.MaDonGiat</dd>
+                    <dt class="col-sm-5">Khách hàng</dt>
+                    <dd class="col-sm-7">@Model.TenKhachHang</dd>
+                    <dt class="col-sm-5">Ngày thanh toán</dt>
+                    <dd class="col-sm-7">@tt.NgayThanhToan.ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dt class="col-sm-5">Số tiền</dt>
+                    <dd class="col-sm-7">@tt.SoTien.ToString("N0", vn) ₫</dd>
+                    <dt class="col-sm-5">Phương thức</dt>
+                    <dd class="col-sm-7">@tt.PhuongThuc</dd>
+                    <dt class="col-sm-5">Người thực hiện</dt>
+                    <dd class="col-sm-7">@tt.NguoiThucHien</dd>
+                    <dt class="col-sm-5">Ghi chú</dt>
+                    <dd class="col-sm-7">@tt.GhiChu</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Tình hình thanh toán của đơn #@tt.MaDonGiat</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Tổng tiền đơn</dt>
+                    <dd class="col-sm-6">@Model.TongTienDon.ToString("N0", vn) ₫</dd>
+                    <dt class="col-sm-6">Đã thanh toán</dt>
+                    <dd class="col-sm-6">@Model.TongDaThanhToan.ToString("N0", vn) ₫</dd>
+                    <dt class="col-sm-6">Còn lại</dt>
+                    <dd class="col-sm-6">@Model.SoTienConLai.ToString("N0", vn) ₫</dd>
+                    <dt class="col-sm-6">Trạng thái</dt>
+                    <dd class="col-sm-6"><span class="badge @mauBadge">@Model.TrangThaiThanhToan</span></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h5 mt-4">Các lần thanh toán của đơn</h2>
+<div class="table-responsive">
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr><th>Mã TT</th><th>Ngày thanh toán</th><th class="text-end">Số tiền</th><th>Phương thức</th><th>Người thực hiện</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model.LichSuThanhToan)
+            {
+                <tr class="@(t.MaThanhToan == tt.MaThanhToan ? "table-primary" : "")">
+                    <td>@t.MaThanhToan</td>
+                    <td>@t.NgayThanhToan.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="text-end">@t.SoTien.ToString("N0", vn) ₫</td>
+                    <td>@t.PhuongThuc</td>
+                    <td>@t.NguoiThucHien</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+<a asp-action="Create" asp-route-maDonGiat="@(Model.SoTienConLai > 0 ? tt.MaDonGiat : (int?)null)" class="btn btn-primary @(Model.SoTienConLai > 0 ? "" : "disabled")">Thanh toán tiếp đơn này</a>

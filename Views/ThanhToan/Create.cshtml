@@ -1,0 +1,101 @@
+@* Họ và tên: Lê Duy Khánh *@
+@* Mã sinh viên: 23103100216 *@
+@* Nội dung thực hiện: View ghi nhận thanh toán, hiển thị tổng tiền/đã trả/còn lại *@
+@model QuanLyGiatLa_UNETI1_DHTI17A5HN.ViewModels.ThanhToanCreateViewModel
+@using System.Globalization
+@using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+@{
+    ViewData["Title"] = "Ghi nhận thanh toán";
+    var vn = new CultureInfo("vi-VN");
+    var inv = CultureInfo.InvariantCulture;
+}
+
+<h1 class="h3 mb-3">Ghi nhận thanh toán</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="MaDonGiat" class="form-label"></label>
+                <select asp-for="MaDonGiat" class="form-select" id="selectDon">
+                    <option value="0">-- Chọn đơn giặt còn nợ --</option>
+                    @foreach (var don in Model.DanhSachDon)
+                    {
+                        <option value="@don.MaDonGiat"
+                                data-khach="@don.TenKhachHang"
+                                data-tong="@don.TongTien.ToString(inv)"
+                                data-datra="@don.DaThanhToan.ToString(inv)"
+                                data-conlai="@don.ConLai.ToString(inv)">
+                            #@don.MaDonGiat - @don.TenKhachHang (còn lại @don.ConLai.ToString("N0", vn) ₫)
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="MaDonGiat" class="text-danger"></span>
+            </div>
+
+            <div id="thongTinDon" class="alert alert-info @(Model.MaDonGiat > 0 ? "" : "d-none")">
+                <div>Khách hàng: <strong id="ttKhach">@Model.TenKhachHang</strong></div>
+                <div>Tổng tiền đơn: <strong id="ttTong">@Model.TongTienDon.ToString("N0", vn)</strong> ₫</div>
+                <div>Đã thanh toán: <strong id="ttDaTra">@Model.TongDaThanhToan.ToString("N0", vn)</strong> ₫</div>
+                <div>Còn lại: <strong id="ttConLai">@Model.SoTienConLai.ToString("N0", vn)</strong> ₫</div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NgayThanhToan" class="form-label"></label>
+                <input asp-for="NgayThanhToan" type="datetime-local" class="form-control" />
+                <span asp-validation-for="NgayThanhToan" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SoTien" class="form-label"></label>
+                <input asp-for="SoTien" type="number" min="1" step="1" class="form-control" id="inputSoTien" />
+                <span asp-validation-for="SoTien" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PhuongThuc" class="form-label"></label>
+                <select asp-for="PhuongThuc" class="form-select"
+                        asp-items="@(new SelectList(PhuongThucThanhToan.DanhSach))"></select>
+                <span asp-validation-for="PhuongThuc" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="GhiChu" class="form-label"></label>
+                <textarea asp-for="GhiChu" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="GhiChu" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Lưu thanh toán</button>
+            <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Chỉ hỗ trợ hiển thị. Việc kiểm tra "không vượt số còn lại" vẫn được làm lại ở Controller.
+        const selectDon = document.getElementById('selectDon');
+        const inputSoTien = document.getElementById('inputSoTien');
+        const khung = document.getElementById('thongTinDon');
+        const dinhDang = n => Number(n).toLocaleString('vi-VN');
+
+        selectDon.addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            if (!opt.value || opt.value === '0') {
+                khung.classList.add('d-none');
+                return;
+            }
+            document.getElementById('ttKhach').textContent = opt.dataset.khach;
+            document.getElementById('ttTong').textContent = dinhDang(opt.dataset.tong);
+            document.getElementById('ttDaTra').textContent = dinhDang(opt.dataset.datra);
+            document.getElementById('ttConLai').textContent = dinhDang(opt.dataset.conlai);
+            khung.classList.remove('d-none');
+
+            inputSoTien.max = opt.dataset.conlai;
+            inputSoTien.value = Math.round(opt.dataset.conlai);   // gợi ý thanh toán đủ
+        });
+    </script>
+}

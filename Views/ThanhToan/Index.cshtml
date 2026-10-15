@@ -1,0 +1,136 @@
+@* Họ và tên: Lê Duy Khánh *@
+@* Mã sinh viên: 23103100216 *@
+@* Nội dung thực hiện: View danh sách thanh toán (tìm kiếm, lọc, sắp xếp, phân trang) *@
+@model QuanLyGiatLa_UNETI1_DHTI17A5HN.ViewModels.ThanhToanListViewModel
+@using System.Globalization
+@using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+@{
+    ViewData["Title"] = "Quản lý thanh toán";
+    var vn = new CultureInfo("vi-VN");
+
+    // Tạo route giữ nguyên điều kiện tìm kiếm/lọc/sắp xếp khi chuyển trang
+    Func<int, object> routeTrang = p => new
+    {
+        trang = p,
+        tuKhoa = Model.TuKhoa,
+        phuongThuc = Model.PhuongThuc,
+        tuNgay = Model.TuNgay?.ToString("yyyy-MM-dd"),
+        denNgay = Model.DenNgay?.ToString("yyyy-MM-dd"),
+        sapXep = Model.SapXep
+    };
+
+    int trangBatDau = Math.Max(1, Model.TrangHienTai - 2);
+    int trangKetThuc = Math.Min(Model.TongSoTrang, Model.TrangHienTai + 2);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Quản lý thanh toán</h1>
+    <a asp-action="Create" class="btn btn-primary">+ Ghi nhận thanh toán</a>
+</div>
+
+@if (TempData["ThongBao"] != null)
+{
+    <div class="alert alert-success">@TempData["ThongBao"]</div>
+}
+
+<form method="get" asp-action="Index" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <input type="text" name="tuKhoa" value="@Model.TuKhoa" class="form-control"
+               placeholder="Mã đơn, khách hàng, SĐT, người thực hiện" />
+    </div>
+    <div class="col-md-2">
+        <select name="phuongThuc" class="form-select">
+            <option value="">-- Phương thức --</option>
+            @foreach (var pt in PhuongThucThanhToan.DanhSach)
+            {
+                <option value="@pt" selected="@(Model.PhuongThuc == pt)">@pt</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="tuNgay" value="@Model.TuNgay?.ToString("yyyy-MM-dd")" class="form-control" title="Từ ngày" />
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="denNgay" value="@Model.DenNgay?.ToString("yyyy-MM-dd")" class="form-control" title="Đến ngày" />
+    </div>
+    <div class="col-md-2">
+        <select name="sapXep" class="form-select">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.SapXep))">Ngày mới nhất</option>
+            <option value="ngay_tang" selected="@(Model.SapXep == "ngay_tang")">Ngày cũ nhất</option>
+            <option value="tien_giam" selected="@(Model.SapXep == "tien_giam")">Số tiền giảm dần</option>
+            <option value="tien_tang" selected="@(Model.SapXep == "tien_tang")">Số tiền tăng dần</option>
+            <option value="don" selected="@(Model.SapXep == "don")">Theo mã đơn</option>
+        </select>
+    </div>
+    <div class="col-md-1 d-grid">
+        <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    </div>
+</form>
+
+<p class="text-muted">
+    Tìm thấy <strong>@Model.TongSoBanGhi</strong> khoản thanh toán,
+    tổng cộng <strong>@Model.TongSoTienLoc.ToString("N0", vn) ₫</strong>.
+</p>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Mã TT</th>
+                <th>Đơn giặt</th>
+                <th>Khách hàng</th>
+                <th>Ngày thanh toán</th>
+                <th class="text-end">Số tiền</th>
+                <th>Phương thức</th>
+                <th>Người thực hiện</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model.DanhSach)
+            {
+                <tr>
+                    <td>@t.MaThanhToan</td>
+                    <td>#@t.MaDonGiat</td>
+                    <td>@t.DonGiat?.KhachHang?.HoTen</td>
+                    <td>@t.NgayThanhToan.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="text-end">@t.SoTien.ToString("N0", vn) ₫</td>
+                    <td>@t.PhuongThuc</td>
+                    <td>@t.NguoiThucHien</td>
+                    <td><a asp-action="Details" asp-route-id="@t.MaThanhToan" class="btn btn-sm btn-outline-secondary">Chi tiết</a></td>
+                </tr>
+            }
+            @if (!Model.DanhSach.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted">Không có khoản thanh toán nào phù hợp.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TongSoTrang > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.CoTrangTruoc ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action("Index", routeTrang(1))">Trang đầu</a>
+            </li>
+            <li class="page-item @(Model.CoTrangTruoc ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action("Index", routeTrang(Model.TrangHienTai - 1))">&laquo;</a>
+            </li>
+            @for (int p = trangBatDau; p <= trangKetThuc; p++)
+            {
+                <li class="page-item @(p == Model.TrangHienTai ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", routeTrang(p))">@p</a>
+                </li>
+            }
+            <li class="page-item @(Model.CoTrangSau ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action("Index", routeTrang(Model.TrangHienTai + 1))">&raquo;</a>
+            </li>
+            <li class="page-item @(Model.CoTrangSau ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action("Index", routeTrang(Model.TongSoTrang))">Trang cuối</a>
+            </li>
+        </ul>
+        <p class="text-center text-muted">Trang @Model.TrangHienTai / @Model.TongSoTrang</p>
+    </nav>
+}
