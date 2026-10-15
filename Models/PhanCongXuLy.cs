@@ -13,6 +13,14 @@ namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
         public const string DangXuLy = "DangXuLy";
         public const string HoanThanh = "HoanThanh";
         public const string DaHuy = "DaHuy";
+
+        public static bool HopLe(string trangThai)
+        {
+            return trangThai == ChuaBatDau
+                || trangThai == DangXuLy
+                || trangThai == HoanThanh
+                || trangThai == DaHuy;
+        }
     }
     public class PhanCongXuLy
     {
