@@ -50,4 +50,18 @@ namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
 
         public static readonly string[] DanhSach = { TienMat, ChuyenKhoan, The };
     }
+    // Trạng thái thanh toán KHÔNG lưu trong DB, được tính từ tổng tiền đơn và tổng đã thanh toán
+    public static class TrangThaiThanhToan
+    {
+        public const string ChuaThanhToan = "Chưa thanh toán";
+        public const string ThanhToanMotPhan = "Thanh toán một phần";
+        public const string DaThanhToan = "Đã thanh toán";
+
+        public static string Tinh(decimal tongTienDon, decimal tongDaThanhToan)
+        {
+            if (tongDaThanhToan <= 0) return ChuaThanhToan;
+            if (tongDaThanhToan < tongTienDon) return ThanhToanMotPhan;
+            return DaThanhToan;
+        }
+    }
 }
