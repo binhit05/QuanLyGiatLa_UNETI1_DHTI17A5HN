@@ -17,8 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<TaiKhoan> TaiKhoans { get; set; }
     public DbSet<LoaiDo> LoaiDos { get; set; }
     public DbSet<DonViTinh> DonViTinhs { get; set; }
-    public DbSet<ThanhToan> ThanhToans { get; set; }
-    public DbSet<KhieuNai> KhieuNais { get; set; }
+
 
     // ===== MODULE 2 - Nghiêm Xuân Bằng =====
 
@@ -27,6 +26,8 @@ public class AppDbContext : DbContext
     // ===== MODULE 4 - Lê Hoàng Anh =====
 
     // ===== MODULE 5 - Lê Duy Khánh =====
+    public DbSet<ThanhToan> ThanhToans { get; set; }
+    public DbSet<KhieuNai> KhieuNais { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
