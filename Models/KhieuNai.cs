@@ -61,6 +61,26 @@ namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
         public const string DangXuLy = "Đang xử lý";
         public const string DaGiaiQuyet = "Đã giải quyết";
         public const string TuChoi = "Từ chối";
+
+        public static readonly string[] DanhSach = { MoiTiepNhan, DangXuLy, DaGiaiQuyet, TuChoi };
+        // Bảng luồng chuyển trạng thái (state machine): trạng thái hiện tại -> các trạng thái được phép chuyển tới.
+        // Đã giải quyết / Từ chối là trạng thái kết thúc, không chuyển tiếp được nữa.
+        private static readonly Dictionary<string, string[]> LuongChuyen = new()
+        {
+            [MoiTiepNhan] = new[] { DangXuLy, TuChoi },
+            [DangXuLy] = new[] { DaGiaiQuyet, TuChoi },
+            [DaGiaiQuyet] = Array.Empty<string>(),
+            [TuChoi] = Array.Empty<string>()
+        };
+
+        public static string[] CacTrangThaiTiepTheo(string trangThaiHienTai) =>
+            LuongChuyen.TryGetValue(trangThaiHienTai, out var dsTiepTheo) ? dsTiepTheo : Array.Empty<string>();
+
+        public static bool CoTheChuyen(string tuTrangThai, string denTrangThai) =>
+            CacTrangThaiTiepTheo(tuTrangThai).Contains(denTrangThai);
+
+        public static bool LaKetThuc(string trangThai) =>
+            trangThai == DaGiaiQuyet || trangThai == TuChoi;
     }
 
     public static class MucDoKhieuNai
