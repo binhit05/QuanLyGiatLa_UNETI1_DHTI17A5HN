@@ -1,0 +1,44 @@
+﻿@model QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.BangGiaDichVu
+
+@{
+    ViewData["Title"] = "Chi tiết bảng giá";
+}
+
+<h2 class="my-3">Chi Tiết Bảng Giá Dịch Vụ</h2>
+
+<div class="card shadow-sm col-md-8">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">Mã Bảng Giá: #@Model.MaBangGia</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Dịch vụ:</dt>
+            <dd class="col-sm-8">@(Model.DichVu != null ? Model.DichVu.TenDichVu : "N/A")</dd>
+
+            <dt class="col-sm-4">Đơn giá:</dt>
+            <dd class="col-sm-8 fw-bold text-success">@Model.DonGia.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Ngày áp dụng:</dt>
+            <dd class="col-sm-8">@Model.NgayApDung.ToString("dd/MM/yyyy")</dd>
+
+            <dt class="col-sm-4">Ngày kết thúc:</dt>
+            <dd class="col-sm-8">@(Model.NgayKetThuc.HasValue ? Model.NgayKetThuc.Value.ToString("dd/MM/yyyy") : "Không thời hạn")</dd>
+
+            <dt class="col-sm-4">Trạng thái:</dt>
+            <dd class="col-sm-8">
+                @if (Model.TrangThai)
+                {
+                    <span class="badge bg-success">Đang áp dụng</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">Ngưng áp dụng</span>
+                }
+            </dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-light">
+        <a asp-action="Edit" asp-route-id="@Model.MaBangGia" class="btn btn-warning">Chỉnh sửa</a>
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    </div>
+</div>

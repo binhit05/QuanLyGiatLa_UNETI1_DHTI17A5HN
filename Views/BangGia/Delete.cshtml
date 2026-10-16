@@ -1,0 +1,48 @@
+﻿@model QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.BangGiaDichVu
+
+@{
+    ViewData["Title"] = "Xóa bảng giá";
+}
+
+<h2 class="my-3 text-danger">Xác Nhận Xóa Bảng Giá Dịch Vụ</h2>
+
+<div class="alert alert-warning col-md-8" role="alert">
+    <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa bản ghi bảng giá này không?
+</div>
+
+<div class="card shadow-sm col-md-8 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="card-title mb-0">Mã Bảng Giá: #@Model.MaBangGia</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Dịch vụ:</dt>
+            <dd class="col-sm-8">@(Model.DichVu != null ? Model.DichVu.TenDichVu : "N/A")</dd>
+
+            <dt class="col-sm-4">Đơn giá:</dt>
+            <dd class="col-sm-8 fw-bold">@Model.DonGia.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Ngày áp dụng:</dt>
+            <dd class="col-sm-8">@Model.NgayApDung.ToString("dd/MM/yyyy")</dd>
+
+            <dt class="col-sm-4">Trạng thái:</dt>
+            <dd class="col-sm-8">
+                @if (Model.TrangThai)
+                {
+                    <span class="badge bg-success">Đang áp dụng</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">Ngưng áp dụng</span>
+                }
+            </dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-light">
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="MaBangGia" />
+            <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
+            <a asp-action="Index" class="btn btn-secondary">Hủy bỏ</a>
+        </form>
+    </div>
+</div>

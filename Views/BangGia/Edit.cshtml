@@ -1,0 +1,48 @@
+﻿@model QuanLyGiatLa_UNETI1_DHTI17A5HN.Models.BangGiaDichVu
+
+@{
+    ViewData["Title"] = "Chỉnh sửa bảng giá";
+}
+
+<h2 class="my-3">Cập Nhật Bảng Giá Dịch Vụ</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="MaBangGia" />
+
+            <div class="mb-3">
+                <label asp-for="MaDichVu" class="form-label">Chọn Dịch Vụ</label>
+                <select asp-for="MaDichVu" class="form-select" asp-items="ViewBag.MaDichVu"></select>
+                <span asp-validation-for="MaDichVu" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DonGia" class="form-label">Đơn Giá (VNĐ)</label>
+                <input asp-for="DonGia" class="form-control" />
+                <span asp-validation-for="DonGia" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NgayApDung" class="form-label">Ngày Áp Dụng</label>
+                <input asp-for="NgayApDung" class="form-control" type="date" />
+                <span asp-validation-for="NgayApDung" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NgayKetThuc" class="form-label">Ngày Kết Thúc</label>
+                <input asp-for="NgayKetThuc" class="form-control" type="date" />
+                <span asp-validation-for="NgayKetThuc" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="TrangThai" />
+                <label class="form-check-label" asp-for="TrangThai">Đang hoạt động</label>
+            </div>
+
+            <button type="submit" class="btn btn-warning">Lưu thay đổi</button>
+            <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+        </form>
+    </div>
+</div>
