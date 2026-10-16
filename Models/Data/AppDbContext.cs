@@ -19,7 +19,8 @@ public class AppDbContext : DbContext
     public DbSet<DonViTinh> DonViTinhs { get; set; }
 
     // ===== MODULE 2 - Nghiêm Xuân Bằng =====
-
+    
+    public DbSet<NhanVien> NhanViens { get; set; }
     // ===== MODULE 3 - Lê Trường Giang =====
 
     // ===== MODULE 4 - Lê Hoàng Anh =====

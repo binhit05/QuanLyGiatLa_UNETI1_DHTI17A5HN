@@ -1,9 +1,17 @@
-﻿using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.Data;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
 
 namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Services
 {
     public class PhanCongXuLyService
     {
+        private readonly AppDbContext _context;
+
+        public PhanCongXuLyService(AppDbContext context)
+        {
+            _context = context;
+        }
         // Kiểm tra dữ liệu và trạng thái khi tạo phân công.
         public bool KiemTraPhanCong(
             PhanCongXuLy phanCong,
@@ -98,6 +106,30 @@ namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Services
 
             thongBao = "Hủy phân công thành công.";
             return true;
+        }
+        public async Task<(bool HopLe, string ThongBao)>
+        KiemTraNhanVienHoatDongAsync(int maNhanVien)
+        {
+            if (maNhanVien <= 0)
+            {
+                return (false, "Mã nhân viên không hợp lệ.");
+            }
+
+            var nhanVien = await _context.NhanViens
+                .AsNoTracking()
+                .FirstOrDefaultAsync(n => n.MaNhanVien == maNhanVien);
+
+            if (nhanVien == null)
+            {
+                return (false, "Nhân viên không tồn tại.");
+            }
+
+            if (!nhanVien.TrangThai)
+            {
+                return (false, "Không thể phân công cho nhân viên đã ngừng hoạt động.");
+            }
+
+            return (true, "Nhân viên đang hoạt động.");
         }
     }
 }

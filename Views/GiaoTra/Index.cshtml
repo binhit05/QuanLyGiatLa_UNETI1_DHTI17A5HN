@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Quản lý giao trả";
+}
+
+<div class="container mt-4">
+    <h2>Quản lý giao trả</h2>
+
+    @if (TempData["ThongBao"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["ThongBao"]
+        </div>
+    }
+
+    @if (TempData["Loi"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Loi"]
+        </div>
+    }
+
+    
+</div>
