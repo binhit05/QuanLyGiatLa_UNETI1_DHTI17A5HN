@@ -1,21 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Họ và tên: Nghiêm Xuân Bằng
+// Mã sinh viên: .....................
+// Nội dung thực hiện: Khai báo entity DichVu.
+using System.ComponentModel.DataAnnotations;
+namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
 
-namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+public class DichVu
 {
-    public class DichVu
-    {
-        [Key]
-        public int MaDichVu { get; set; }
-
-        [Required(ErrorMessage = "Tên dịch vụ không được để trống")]
-        [StringLength(100, ErrorMessage = "Tên dịch vụ không vượt quá 100 ký tự")]
-        public string TenDichVu { get; set; } = string.Empty;
-
-        public string? MoTa { get; set; }
-
-        public bool TrangThai { get; set; } = true; // True: Đang hoạt động, False: Ngưng hoạt động
-
-        // Liên kết với Bảng giá dịch vụ
-        public ICollection<BangGiaDichVu>? BangGiaDichVus { get; set; }
-    }
+    [Key] public int MaDichVu { get; set; }
+    [Required(ErrorMessage = "Nhập tên dịch vụ"), StringLength(100)] public string TenDichVu { get; set; } = "";
+    [StringLength(500)] public string? MoTa { get; set; }
+    [Range(1, 720, ErrorMessage = "Thời gian xử lý (giờ) từ 1 đến 720")] public int ThoiGianXuLyDuKien { get; set; } = 24;
+    public bool TrangThai { get; set; } = true;
 }

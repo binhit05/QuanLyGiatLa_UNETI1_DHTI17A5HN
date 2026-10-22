@@ -1,176 +1,105 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿// Họ và tên: Nghiêm Xuân Bằng
+// Mã sinh viên: .....................
+// Nội dung thực hiện: Quản lý bảng giá dịch vụ, kiểm tra không chồng lấn thời gian áp dụng.
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Data;
-using QuanLyGiatLa_UNETI1_DHTI17A5HN.Helpers;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.Filters;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Controllers;
 
-namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Controllers
+// Bảng giá của từng dịch vụ (kiểm tra không chồng lấn thời gian áp dụng)
+[PhanQuyen(VaiTroConst.Admin)]
+public class BangGiaController : BaseController
 {
-    public class BangGiaController : Controller
+    public BangGiaController(AppDbContext db) : base(db) { }
+
+    public IActionResult Index(int dichVuId)
     {
-        private readonly AppDbContext _context;
+        var dv = _db.DichVus.Find(dichVuId);
+        if (dv == null) return NotFound();
+        ViewBag.DichVu = dv;
+        var ds = _db.BangGias.Include(b => b.LoaiDo).Include(b => b.DonViTinh)
+                    .Where(b => b.MaDichVu == dichVuId)
+                    .OrderBy(b => b.LoaiDo!.TenLoaiDo).ThenByDescending(b => b.NgayApDung).ToList();
+        return View(ds);
+    }
 
-        public BangGiaController(AppDbContext context)
+    private void NapForm(int dichVuId)
+    {
+        ViewBag.DichVu = _db.DichVus.Find(dichVuId);
+        ViewBag.LoaiDos = _db.LoaiDos.Where(x => x.TrangThai).OrderBy(x => x.TenLoaiDo).ToList();
+        ViewBag.DonViTinhs = _db.DonViTinhs.Where(x => x.TrangThai).OrderBy(x => x.TenDonViTinh).ToList();
+    }
+
+    private void KiemTra(BangGiaDichVu m)
+    {
+        if (m.NgayKetThuc != null && m.NgayKetThuc.Value.Date < m.NgayApDung.Date)
+            ModelState.AddModelError("NgayKetThuc", "Ngày kết thúc phải sau hoặc bằng ngày áp dụng");
+        if (m.TrangThai && ModelState.IsValid)
         {
-            _context = context;
+            var tu = m.NgayApDung.Date;
+            var den = m.NgayKetThuc?.Date ?? new DateTime(9999, 1, 1);
+            bool chong = _db.BangGias.Any(b => b.MaBangGia != m.MaBangGia && b.MaDichVu == m.MaDichVu && b.MaLoaiDo == m.MaLoaiDo
+                         && b.MaDonViTinh == m.MaDonViTinh && b.TrangThai
+                         && b.NgayApDung <= den && (b.NgayKetThuc == null || b.NgayKetThuc >= tu));
+            if (chong) ModelState.AddModelError("", "Khoảng thời gian áp dụng bị chồng lấn với một bảng giá khác của cùng dịch vụ, loại đồ và đơn vị tính.");
         }
+    }
 
-        // GET: BangGia
-        public async Task<IActionResult> Index(string searchString, int? pageNumber)
-        {
-            ViewData["CurrentFilter"] = searchString;
+    [HttpGet]
+    public IActionResult Create(int dichVuId)
+    {
+        if (_db.DichVus.Find(dichVuId) == null) return NotFound();
+        NapForm(dichVuId);
+        return View("Form", new BangGiaDichVu { MaDichVu = dichVuId });
+    }
 
-            var query = _context.BangGiaDichVu
-                .Include(b => b.DichVu)
-                .AsNoTracking();
+    [HttpPost]
+    public IActionResult Create(BangGiaDichVu model)
+    {
+        KiemTra(model);
+        if (!ModelState.IsValid) { NapForm(model.MaDichVu); return View("Form", model); }
+        model.MaBangGia = 0;
+        _db.BangGias.Add(model);
+        _db.SaveChanges();
+        ThongBao("Thêm bảng giá thành công");
+        return RedirectToAction(nameof(Index), new { dichVuId = model.MaDichVu });
+    }
 
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                query = query.Where(b => b.DichVu != null && b.DichVu.TenDichVu.Contains(searchString));
-            }
+    [HttpGet]
+    public IActionResult Edit(int id)
+    {
+        var x = _db.BangGias.Find(id);
+        if (x == null) return NotFound();
+        NapForm(x.MaDichVu);
+        return View("Form", x);
+    }
 
-            query = query.OrderByDescending(b => b.MaBangGia);
+    [HttpPost]
+    public IActionResult Edit(BangGiaDichVu model)
+    {
+        var x = _db.BangGias.Find(model.MaBangGia);
+        if (x == null) return NotFound();
+        model.MaDichVu = x.MaDichVu;
+        KiemTra(model);
+        if (!ModelState.IsValid) { NapForm(x.MaDichVu); return View("Form", model); }
+        x.MaLoaiDo = model.MaLoaiDo; x.MaDonViTinh = model.MaDonViTinh; x.DonGia = model.DonGia;
+        x.NgayApDung = model.NgayApDung; x.NgayKetThuc = model.NgayKetThuc; x.TrangThai = model.TrangThai;
+        _db.SaveChanges();
+        ThongBao("Cập nhật bảng giá thành công");
+        return RedirectToAction(nameof(Index), new { dichVuId = x.MaDichVu });
+    }
 
-            int pageSize = 10;
-            var paginatedList = await PaginatedList<BangGiaDichVu>.CreateAsync(query, pageNumber ?? 1, pageSize);
-
-            return View(paginatedList);
-        }
-
-        // GET: BangGia/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var bangGia = await _context.BangGiaDichVu
-                .Include(b => b.DichVu)
-                .FirstOrDefaultAsync(m => m.MaBangGia == id);
-
-            if (bangGia == null)
-            {
-                return NotFound();
-            }
-
-            return View(bangGia);
-        }
-
-        // GET: BangGia/Create
-        public IActionResult Create()
-        {
-            ViewData["MaDichVu"] = new SelectList(_context.DichVu, "MaDichVu", "TenDichVu");
-            return View();
-        }
-
-        // POST: BangGia/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("MaBangGia,MaDichVu,DonGia,NgayApDung,NgayKetThuc,TrangThai")] BangGiaDichVu bangGia)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(bangGia);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["MaDichVu"] = new SelectList(_context.DichVu, "MaDichVu", "TenDichVu", bangGia.MaDichVu);
-            return View(bangGia);
-        }
-
-        // GET: BangGia/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var bangGia = await _context.BangGiaDichVu.FindAsync(id);
-            if (bangGia == null)
-            {
-                return NotFound();
-            }
-            ViewData["MaDichVu"] = new SelectList(_context.DichVu, "MaDichVu", "TenDichVu", bangGia.MaDichVu);
-            return View(bangGia);
-        }
-
-        // POST: BangGia/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("MaBangGia,MaDichVu,DonGia,NgayApDung,NgayKetThuc,TrangThai")] BangGiaDichVu bangGia)
-        {
-            if (id != bangGia.MaBangGia)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(bangGia);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BangGiaExists(bangGia.MaBangGia))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["MaDichVu"] = new SelectList(_context.DichVu, "MaDichVu", "TenDichVu", bangGia.MaDichVu);
-            return View(bangGia);
-        }
-
-        // GET: BangGia/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var bangGia = await _context.BangGiaDichVu
-                .Include(b => b.DichVu)
-                .FirstOrDefaultAsync(m => m.MaBangGia == id);
-
-            if (bangGia == null)
-            {
-                return NotFound();
-            }
-
-            return View(bangGia);
-        }
-
-        // POST: BangGia/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var bangGia = await _context.BangGiaDichVu.FindAsync(id);
-            if (bangGia != null)
-            {
-                _context.BangGiaDichVu.Remove(bangGia);
-                await _context.SaveChangesAsync();
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool BangGiaExists(int id)
-        {
-            return _context.BangGiaDichVu.Any(e => e.MaBangGia == id);
-        }
+    [HttpPost]
+    public IActionResult Delete(int id)
+    {
+        var x = _db.BangGias.Find(id);
+        if (x == null) return NotFound();
+        int dv = x.MaDichVu;
+        _db.BangGias.Remove(x);   // đơn cũ đã lưu đơn giá áp dụng riêng nên xóa an toàn
+        _db.SaveChanges();
+        ThongBao("Đã xóa dòng bảng giá");
+        return RedirectToAction(nameof(Index), new { dichVuId = dv });
     }
 }

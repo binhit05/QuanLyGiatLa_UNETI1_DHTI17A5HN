@@ -1,115 +1,95 @@
-﻿
-
+﻿// Họ và tên: Nghiêm Xuân Bằng
+// Mã sinh viên: .....................
+// Nội dung thực hiện: Quản lý dịch vụ giặt là.
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Data;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.Filters;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Helpers;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.ViewModels;
+using Microsoft.EntityFrameworkCore;
+namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Controllers;
 
-namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Controllers
+[PhanQuyen(VaiTroConst.Admin)]
+public class DichVuController : BaseController
 {
-    public class DichVuController : Controller
+    public DichVuController(AppDbContext db) : base(db) { }
+
+    public IActionResult Index(string? q, string? trangThai, string? sort, int page = 1)
     {
-        private readonly AppDbContext _context;
-
-        public DichVuController(AppDbContext context)
+        var query = _db.DichVus.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(q))
         {
-            _context = context;
+            var s = q.Trim(); var id = UiHelper.ThamSoMa(s, "DV-");
+            query = query.Where(x => x.TenDichVu.Contains(s) || (x.MoTa != null && x.MoTa.Contains(s)) || (id != null && x.MaDichVu == id));
         }
+        if (trangThai == "1") query = query.Where(x => x.TrangThai); else if (trangThai == "0") query = query.Where(x => !x.TrangThai);
+        query = sort == "ten" ? query.OrderBy(x => x.TenDichVu) : sort == "cu" ? query.OrderBy(x => x.MaDichVu) : query.OrderBy(x => x.MaDichVu);
 
-        // GET: DichVu
-        public async Task<IActionResult> Index(
-            string searchString,
-            bool? statusFilter,
-            string sortOrder,
-            int? pageNumber)
+        var ds = PagedList<DichVu>.Tao(query, page, CoTrang);
+        var ids = ds.Items.Select(x => x.MaDichVu).ToList();
+        var bg = _db.BangGias.Include(b => b.DonViTinh).Where(b => ids.Contains(b.MaDichVu) && b.TrangThai).ToList();
+        ViewBag.Gia = bg.GroupBy(b => b.MaDichVu).ToDictionary(g => g.Key, g => g.OrderBy(b => b.DonGia).First());
+        ViewBag.SoGia = bg.GroupBy(b => b.MaDichVu).ToDictionary(g => g.Key, g => g.Count());
+
+        ViewBag.Filter = new FilterBarVM
         {
-            // Lưu lại các tham số sắp xếp & lọc ra ViewData để dùng trên View
-            ViewData["CurrentSort"] = sortOrder;
-            ViewData["NameSortParm"] = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-            ViewData["CurrentFilter"] = searchString;
-            ViewData["StatusFilter"] = statusFilter;
+            Placeholder = "Tìm kiếm theo mã, tên dịch vụ...", Q = q, Sort = sort ?? "moi",
+            Selects = new List<SelectBox> { new SelectBox { Name = "trangThai", AllText = "Tất cả trạng thái", Selected = trangThai,
+                Opts = new List<Opt> { new Opt("1", "Hoạt động"), new Opt("0", "Ngừng hoạt động") } } },
+            Sorts = new List<Opt> { new Opt("moi", "Theo mã"), new Opt("ten", "Tên A → Z") }
+        };
+        return View(ds);
+    }
 
-            var dichVus = _context.DichVu.AsQueryable();
+    [HttpGet] public IActionResult Create() => View("Form", new DichVu());
 
-            // 1. Tìm kiếm (Search) theo Tên dịch vụ
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                dichVus = dichVus.Where(d => d.TenDichVu.Contains(searchString));
-            }
+    [HttpPost]
+    public IActionResult Create(DichVu model)
+    {
+        if (_db.DichVus.Any(x => x.TenDichVu == model.TenDichVu)) ModelState.AddModelError("TenDichVu", "Tên dịch vụ đã tồn tại");
+        if (!ModelState.IsValid) return View("Form", model);
+        model.MaDichVu = 0;
+        _db.DichVus.Add(model);
+        _db.SaveChanges();
+        ThongBao("Thêm dịch vụ thành công. Hãy thêm bảng giá cho dịch vụ này.");
+        return RedirectToAction("Index", "BangGia", new { dichVuId = model.MaDichVu });
+    }
 
-            // 2. Lọc (Filter) theo Trạng thái
-            if (statusFilter.HasValue)
-            {
-                dichVus = dichVus.Where(d => d.TrangThai == statusFilter.Value);
-            }
+    [HttpGet]
+    public IActionResult Edit(int id)
+    {
+        var x = _db.DichVus.Find(id);
+        return x == null ? NotFound() : View("Form", x);
+    }
 
-            // 3. Sắp xếp (Sort) theo tên (A-Z hoặc Z-A)
-            dichVus = sortOrder switch
-            {
-                "name_desc" => dichVus.OrderByDescending(d => d.TenDichVu),
-                _ => dichVus.OrderBy(d => d.TenDichVu),
-            };
+    [HttpPost]
+    public IActionResult Edit(DichVu model)
+    {
+        if (_db.DichVus.Any(x => x.TenDichVu == model.TenDichVu && x.MaDichVu != model.MaDichVu)) ModelState.AddModelError("TenDichVu", "Tên dịch vụ đã tồn tại");
+        if (!ModelState.IsValid) return View("Form", model);
+        var x = _db.DichVus.Find(model.MaDichVu);
+        if (x == null) return NotFound();
+        x.TenDichVu = model.TenDichVu.Trim(); x.MoTa = model.MoTa; x.ThoiGianXuLyDuKien = model.ThoiGianXuLyDuKien; x.TrangThai = model.TrangThai;
+        _db.SaveChanges();
+        ThongBao("Cập nhật dịch vụ thành công");
+        return RedirectToAction(nameof(Index));
+    }
 
-            // 4. Phân trang (Pagination) - 5 dòng / trang
-            int pageSize = 5;
-            return View(await PaginatedList<DichVu>.CreateAsync(dichVus.AsNoTracking(), pageNumber ?? 1, pageSize));
-        }
-
-        // GET: DichVu/Create
-        public IActionResult Create()
+    [HttpPost]
+    public IActionResult Delete(int id)
+    {
+        var x = _db.DichVus.Find(id);
+        if (x == null) return NotFound();
+        if (_db.ChiTietDonGiats.Any(c => c.MaDichVu == id))
         {
-            return View();
+            BaoLoi("Dịch vụ đã được dùng trong đơn giặt nên không thể xóa. Hãy chuyển sang ngừng hoạt động.");
+            return RedirectToAction(nameof(Index));
         }
-
-        // POST: DichVu/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DichVu dichVu)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(dichVu);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(dichVu);
-        }
-
-        // GET: DichVu/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var dichVu = await _context.DichVu.FindAsync(id);
-            if (dichVu == null) return NotFound();
-
-            return View(dichVu);
-        }
-
-        // POST: DichVu/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, DichVu dichVu)
-        {
-            if (id != dichVu.MaDichVu) return NotFound();
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(dichVu);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.DichVu.Any(e => e.MaDichVu == dichVu.MaDichVu))
-                        return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(dichVu);
-        }
+        _db.BangGias.RemoveRange(_db.BangGias.Where(b => b.MaDichVu == id));
+        _db.DichVus.Remove(x);
+        _db.SaveChanges();
+        ThongBao("Đã xóa dịch vụ cùng bảng giá của nó");
+        return RedirectToAction(nameof(Index));
     }
 }
