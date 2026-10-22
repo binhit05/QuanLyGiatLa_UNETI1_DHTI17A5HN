@@ -1,0 +1,69 @@
+@* Họ và tên: Trần Văn Bình | Mã sinh viên: 23103100179 | Nội dung thực hiện: Giao diện trang TaiKhoan/DangNhap. *@
+@model DangNhapViewModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng nhập - CleanGo Laundry</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-body">
+  <div class="login-left">
+    <div class="lg-brand">
+      <span class="logo-box"><i class="bi bi-basket2-fill"></i></span>
+      <div><div class="lg-name">CleanGo</div><div class="lg-sub">LAUNDRY MANAGER</div></div>
+    </div>
+    <div class="lg-hero">
+      <div class="login-kicker">HỆ THỐNG QUẢN LÝ GIẶT LÀ</div>
+      <h1>Sạch tinh tươm.<br />Quản lý nhẹ nhàng.</h1>
+      <p>Tối ưu toàn bộ quy trình từ tiếp nhận, xử lý đến giao trả trên một nền tảng duy nhất.</p>
+      <div class="lg-feats">
+        <div class="lg-feat"><span class="fi"><i class="bi bi-receipt"></i></span><div><b>Tiếp nhận nhanh gọn</b><small>Tạo đơn và tự tính tiền theo bảng giá đang hiệu lực</small></div></div>
+        <div class="lg-feat"><span class="fi"><i class="bi bi-clipboard-check"></i></span><div><b>Theo dõi tiến độ xử lý</b><small>6 công đoạn rõ ràng, cảnh báo đơn sắp và quá hạn</small></div></div>
+        <div class="lg-feat"><span class="fi"><i class="bi bi-truck"></i></span><div><b>Giao trả &amp; công nợ chuẩn</b><small>Đối soát thanh toán, giao trả đúng hẹn cho khách</small></div></div>
+      </div>
+    </div>
+    <div class="lg-foot"><i class="bi bi-headset"></i><span>Hỗ trợ kỹ thuật: <b>0987188328</b></span></div>
+  </div>
+  <div class="login-right">
+    <div class="login-box">
+      <div class="login-kicker" style="color:var(--blue)">CHÀO MỪNG TRỞ LẠI</div>
+      <h2>Đăng nhập hệ thống</h2>
+      <div class="lead2">Sử dụng tài khoản được cấp để tiếp tục</div>
+      <form asp-action="DangNhap" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="mb-3">
+          <label asp-for="TenDangNhap" class="flabel">Tên đăng nhập</label>
+          <input asp-for="TenDangNhap" id="tendn" class="finput" placeholder="Nhập tên đăng nhập" autofocus />
+          <span asp-validation-for="TenDangNhap" class="ferr"></span>
+        </div>
+        <div class="mb-3">
+          <label asp-for="MatKhau" class="flabel">Mật khẩu</label>
+          <input asp-for="MatKhau" id="matkhau" type="password" class="finput" placeholder="Nhập mật khẩu (123456)" />
+          <span asp-validation-for="MatKhau" class="ferr"></span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3 small">
+          <label class="d-flex align-items-center gap-2 text-muted"><input type="checkbox" /> Ghi nhớ đăng nhập</label>
+          <a href="#" onclick="alert('Vui lòng liên hệ quản trị viên (0987188328) để được cấp lại mật khẩu.');return false;" class="fw-bold">Quên mật khẩu?</a>
+        </div>
+        <button class="btn-login">Đăng nhập &nbsp;<i class="bi bi-chevron-right"></i></button>
+      </form>
+      <div class="demo-box">
+        <div class="small fw-bold text-muted mb-1">Tài khoản dùng thử — mật khẩu: 123456</div>
+        @foreach (var u in new[] { "admin", "tiepnhan", "tiepnhan2", "xuly", "xuly2", "khoa" })
+        {
+          <span class="chip" onclick="document.getElementById('tendn').value='@u';document.getElementById('matkhau').value='123456';">@u</span>
+        }
+      </div>
+      <p class="text-muted small mt-4 text-center">© 2026 CleanGo Laundry. Hỗ trợ: 0987188328 · Phiên bản 1.0.0</p>
+    </div>
+  </div>
+  <script src="~/lib/jquery/dist/jquery.min.js"></script>
+  <partial name="_ValidationScriptsPartial" />
+</body>
+</html>
