@@ -1,0 +1,21 @@
+@* Họ và tên: Trần Văn Bình | Mã sinh viên: 23103100179 | Nội dung thực hiện: Giao diện trang DanhMuc/Form. *@
+@model DanhMucForm
+@{
+    bool laLoaiDo = Model.Tab == "loaido";
+    ViewData["Title"] = (Model.Id == 0 ? "Thêm " : "Sửa ") + (laLoaiDo ? "loại đồ" : "đơn vị tính");
+}
+<a class="back-link" asp-action="Index" asp-route-tab="@Model.Tab"><i class="bi bi-chevron-left"></i> Danh mục dùng chung</a>
+<div class="page-head"><div><h1>@ViewData["Title"]</h1></div></div>
+<form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" method="post">
+  <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="Tab" />
+  <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+  <div class="form-sec" style="max-width:720px">
+    <div class="fgrid two">
+      <div><label class="flabel">@(laLoaiDo ? "Tên loại đồ" : "Tên đơn vị tính") *</label><input asp-for="Ten" class="finput" /><span asp-validation-for="Ten" class="ferr"></span></div>
+      <div><label class="flabel">Trạng thái</label><select name="TrangThai" class="fselect"><option value="true" selected="@Model.TrangThai">Hoạt động</option><option value="false" selected="@(!Model.TrangThai)">Ngừng hoạt động</option></select></div>
+      <div class="full"><label class="flabel">Mô tả</label><input asp-for="MoTa" class="finput" /><span asp-validation-for="MoTa" class="ferr"></span></div>
+    </div>
+    <div class="d-flex gap-2 mt-3"><button class="btn btn-primary"><i class="bi bi-check2"></i>Lưu</button><a class="btn btn-white" asp-action="Index" asp-route-tab="@Model.Tab">Hủy</a></div>
+  </div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

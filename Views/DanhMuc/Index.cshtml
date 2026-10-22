@@ -1,0 +1,43 @@
+@* Họ và tên: Trần Văn Bình | Mã sinh viên: 23103100179 | Nội dung thực hiện: Giao diện trang DanhMuc/Index. *@
+@model PagedList<DanhMucRow>
+@{
+    ViewData["Title"] = "Danh mục dùng chung";
+    string tab = ViewBag.Tab;
+    bool laLoaiDo = tab == "loaido";
+    string prefix = laLoaiDo ? "LD" : "DT";
+}
+<div class="page-head">
+  <div><h1>Danh mục dùng chung</h1><p>Quản lý loại đồ và đơn vị tính dùng trong bảng giá.</p></div>
+  <a class="btn btn-primary" asp-action="Create" asp-route-tab="@tab"><i class="bi bi-plus-lg"></i>@(laLoaiDo ? "Thêm loại đồ" : "Thêm đơn vị tính")</a>
+</div>
+<div class="tabs-box">
+  <a class="@(laLoaiDo ? "on" : "")" asp-action="Index" asp-route-tab="loaido">Loại đồ <span class="n">@ViewBag.SoLoaiDo</span></a>
+  <a class="@(!laLoaiDo ? "on" : "")" asp-action="Index" asp-route-tab="donvitinh">Đơn vị tính <span class="n">@ViewBag.SoDonViTinh</span></a>
+</div>
+<div class="panel">
+  @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Mã</th><th>Tên danh mục</th><th>Mô tả</th><th>Đang sử dụng</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>
+      @foreach (var x in Model.Items)
+      {
+        <tr>
+          <td><a class="code" asp-action="Edit" asp-route-tab="@tab" asp-route-id="@x.Id">@x.Ma</a></td>
+          <td>@UiHelper.TenChuaAvatar(x.Ten)</td>
+          <td>@x.MoTa</td>
+          <td>@x.DangSuDung bảng giá</td>
+          <td>@UiHelper.Badge(x.TrangThai ? "Hoạt động" : "Ngừng hoạt động")</td>
+          <td><div class="acts">
+            <a class="ico" asp-action="Edit" asp-route-tab="@tab" asp-route-id="@x.Id" title="Sửa"><i class="bi bi-pencil"></i></a>
+            <form asp-action="Delete" asp-route-tab="@tab" asp-route-id="@x.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa @x.Ten?');">
+              <button class="ico del" title="Xóa"><i class="bi bi-trash3"></i></button></form>
+          </div></td>
+        </tr>
+      }
+      @if (!Model.Items.Any()) { <tr><td colspan="6" class="empty">Không có danh mục phù hợp</td></tr> }
+      </tbody>
+    </table>
+  </div>
+  <partial name="_PhanTrang" model="Model" />
+</div>
