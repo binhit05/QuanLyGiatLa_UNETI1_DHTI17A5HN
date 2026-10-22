@@ -1,0 +1,66 @@
+﻿@model PagedList<DonGiat>
+@{
+    ViewData["Title"] = "Danh sách đơn giặt";
+    string tab = ViewBag.Tab ?? "";
+    var vaiTro = Context.Session.LayVaiTro();
+    bool canWrite = vaiTro == VaiTroConst.Admin || vaiTro == VaiTroConst.NhanVienTiepNhan;
+    string Url2(string t) => Url.Action("Index", new { tab = t }) ?? "#";
+}
+<div class="page-head">
+    <div><h1>Danh sách đơn giặt</h1><p>Quản lý, tìm kiếm và theo dõi toàn bộ đơn giặt.</p></div>
+    @if (canWrite)
+    {
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Tạo đơn giặt</a>
+    }
+</div>
+
+<div class="panel">
+    @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+    <div class="tabs-line">
+        <a class="@(tab == "" ? "on" : "")" href="@Url2("")">Tất cả <span class="n">@ViewBag.CTong</span></a>
+        <a class="@(tab == "moi" ? "on" : "")" href="@Url2("moi")">Mới tiếp nhận <span class="n">@ViewBag.CMoi</span></a>
+        <a class="@(tab == "dang" ? "on" : "")" href="@Url2("dang")">Đang xử lý <span class="n">@ViewBag.CDang</span></a>
+        <a class="@(tab == "cho" ? "on" : "")" href="@Url2("cho")">Chờ giao <span class="n">@ViewBag.CCho</span></a>
+        <a class="@(tab == "quahan" ? "on" : "")" href="@Url2("quahan")">Quá hạn <span class="n">@ViewBag.CQuaHan</span></a>
+    </div>
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Dịch vụ</th><th>Ngày tiếp nhận</th><th>Hẹn trả</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+                @foreach (var d in Model.Items)
+                {
+                    var dichVu = string.Join(", ", d.ChiTiets.Select(c => c.DichVu!.TenDichVu).Distinct());
+                    <tr>
+                        <td><a class="code" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a></td>
+                        <td>@UiHelper.Nguoi(d.KhachHang?.HoTen, d.KhachHang?.SoDienThoai)</td>
+                        <td>@dichVu</td>
+                        <td>@UiHelper.NgayGio(d.NgayTiepNhan)</td>
+                        <td>@UiHelper.NgayGio(d.NgayHenTra)</td>
+                        <td class="num">@UiHelper.Tien(d.TongTienDuKien)</td>
+                        <td>@UiHelper.Badge(d.TrangThaiHienThi)</td>
+                        <td>
+                            <div class="acts">
+                                <a class="ico" asp-action="Details" asp-route-id="@d.MaDonGiat" title="Xem chi tiết"><i class="bi bi-eye"></i></a>
+                                @if (canWrite && d.TrangThai != TrangThaiDon.HoanThanh && d.TrangThai != TrangThaiDon.DaHuy)
+                                {
+                                    <a class="ico" asp-action="Edit" asp-route-id="@d.MaDonGiat" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
+                                }
+                                @if (canWrite && (d.TrangThai == TrangThaiDon.MoiTiepNhan || d.TrangThai == TrangThaiDon.DaHuy))
+                                {
+                                    <form asp-action="Delete" asp-route-id="@d.MaDonGiat" method="post" class="d-inline" onsubmit="return confirm('Xóa đơn @UiHelper.MaDon(d)?');">
+                                        <button class="ico del" title="Xóa"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="8" class="empty">Không có đơn giặt phù hợp</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_PhanTrang" model="Model" />
+</div>

@@ -1,0 +1,74 @@
+﻿@model PagedList<KhachHang>
+@{
+    ViewData["Title"] = "Quản lý khách hàng";
+    var soDon = (Dictionary<int, int>)ViewBag.SoDon;
+    var chiTieu = (Dictionary<int, decimal>)ViewBag.TongChiTieu;
+}
+<div class="page-head">
+    <div><h1>Quản lý khách hàng</h1><p>Lưu trữ thông tin và lịch sử sử dụng dịch vụ của khách hàng.</p></div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mdKH"><i class="bi bi-plus-lg"></i>Thêm khách hàng</button>
+</div>
+<div class="panel">
+    @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead><tr><th>Mã KH</th><th>Khách hàng</th><th>Email</th><th>Số đơn</th><th>Tổng chi tiêu</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+                @foreach (var k in Model.Items)
+                {
+                    int n = soDon.ContainsKey(k.MaKhachHang) ? soDon[k.MaKhachHang] : 0;
+                    decimal tong = chiTieu.ContainsKey(k.MaKhachHang) ? chiTieu[k.MaKhachHang] : 0;
+                    string tt = !k.TrangThai ? "Ngừng hoạt động" : (tong >= 5000000 ? "Khách thân thiết" : "Hoạt động");
+                    <tr>
+                        <td><a class="code" asp-action="Edit" asp-route-id="@k.MaKhachHang">@UiHelper.MaKH(k.MaKhachHang)</a></td>
+                        <td>@UiHelper.Nguoi(k.HoTen, k.SoDienThoai)</td>
+                        <td>@k.Email</td>
+                        <td>@n đơn</td>
+                        <td class="num">@UiHelper.Tien(tong)</td>
+                        <td>@UiHelper.Badge(tt)</td>
+                        <td>
+                            <div class="acts">
+                                <a class="ico" asp-action="Edit" asp-route-id="@k.MaKhachHang" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                <form asp-action="Delete" asp-route-id="@k.MaKhachHang" method="post" class="d-inline" onsubmit="return confirm('Xóa khách hàng @k.HoTen?');">
+                                    <button class="ico del" title="Xóa"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="7" class="empty">Không có khách hàng phù hợp</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_PhanTrang" model="Model" />
+</div>
+
+<div class="modal fade" id="mdKH" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form asp-action="Create" method="post">
+                <div class="modal-header"><div><h5 class="modal-title">Thêm khách hàng</h5><div class="small text-muted">Vui lòng điền đầy đủ các thông tin bên dưới.</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="fgrid two">
+                        <div><label class="flabel">Mã</label><input class="finput" placeholder="Hệ thống tự tạo" disabled /></div>
+                        <div><label class="flabel">Tên / Họ tên *</label><input name="HoTen" class="finput" placeholder="Nhập họ tên" required maxlength="100" /></div>
+                        <div><label class="flabel">Số điện thoại *</label><input name="SoDienThoai" class="finput" placeholder="09xx xxx xxx" required pattern="0[0-9]{9,10}" title="Bắt đầu bằng 0, gồm 10-11 chữ số" /></div>
+                        <div><label class="flabel">Email</label><input name="Email" type="email" class="finput" placeholder="email@cleango.vn" /></div>
+                        <div><label class="flabel">Trạng thái</label><select name="TrangThai" class="fselect"><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></div>
+                        <div><label class="flabel">Ghi chú</label><input name="GhiChu" class="finput" placeholder="Nhập ghi chú (nếu có)" maxlength="300" /></div>
+                        <div class="full"><label class="flabel">Địa chỉ</label><input name="DiaChi" class="finput" placeholder="Số nhà, đường, quận/huyện" maxlength="200" /></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-white" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary"><i class="bi bi-check2"></i>Lưu thay đổi</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        if (new URLSearchParams(location.search).get('them')) new bootstrap.Modal(document.getElementById('mdKH')).show();
+    </script>
+}

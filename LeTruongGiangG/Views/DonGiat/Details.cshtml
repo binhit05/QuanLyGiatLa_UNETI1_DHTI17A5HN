@@ -1,0 +1,197 @@
+﻿@model DonGiat
+@{
+    ViewData["Title"] = "Chi tiết đơn giặt";
+    var lichSu = (List<LichSuXuLy>)ViewBag.LichSu;
+    var tiepTheo = (string[])ViewBag.TiepTheo;
+    var vaiTro = Context.Session.LayVaiTro();
+    bool canWrite = vaiTro == VaiTroConst.Admin || vaiTro == VaiTroConst.NhanVienTiepNhan;
+    var cds = Model.CongDoans.OrderBy(c => c.ThuTu).ToList();
+    int xong = cds.Count(c => c.TrangThai == QuyTrinh.HoanThanh);
+    int pct = cds.Count > 0 ? xong * 100 / cds.Count : 0;
+    int soSp = Model.ChiTiets.Sum(c => (int)Math.Ceiling(c.SoLuongKhoiLuong));
+    var nvPhuTrach = Model.PhanCongs.FirstOrDefault()?.NhanVien?.HoTen;
+}
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Danh sách đơn giặt</a>
+<div class="page-head">
+    <div>
+        <div class="title-line"><h1>Đơn giặt @UiHelper.MaDon(Model)</h1>@UiHelper.Badge(Model.TrangThaiHienThi)</div>
+        <p>Tiếp nhận lúc @Model.NgayTiepNhan.ToString("HH:mm"), @UiHelper.Ngay(Model.NgayTiepNhan) bởi @(Model.NguoiTiepNhan?.HoTen ?? "—").</p>
+    </div>
+    @if (canWrite)
+    {
+        <div class="d-flex gap-2">
+            @if (Model.TrangThai != TrangThaiDon.HoanThanh && Model.TrangThai != TrangThaiDon.DaHuy)
+            {
+                <a class="btn btn-white" asp-action="Edit" asp-route-id="@Model.MaDonGiat"><i class="bi bi-pencil"></i>Chỉnh sửa</a>
+            }
+            @if (tiepTheo.Length > 0)
+            {
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mdTrangThai"><i class="bi bi-arrow-down-up"></i>Cập nhật trạng thái</button>
+            }
+        </div>
+    }
+</div>
+
+<div class="grid-detail">
+    <div>
+        <div class="panel mb-3">
+            <div class="panel-head"><h3 class="panel-title">Thông tin đơn giặt</h3></div>
+            <div class="info-grid">
+                <div><div class="k">Khách hàng</div><div class="v">@Model.KhachHang?.HoTen</div><div class="ps">@UiHelper.MaKH(Model.MaKhachHang)</div></div>
+                <div><div class="k">Số điện thoại</div><div class="v">@Model.KhachHang?.SoDienThoai</div></div>
+                <div><div class="k">Ngày tiếp nhận</div><div class="v">@UiHelper.NgayGio(Model.NgayTiepNhan)</div></div>
+                <div><div class="k">Ngày hẹn trả</div><div class="v">@UiHelper.NgayGio(Model.NgayHenTra)</div></div>
+                <div><div class="k">Người tiếp nhận</div><div class="v">@(Model.NguoiTiepNhan?.HoTen ?? "—")</div></div>
+                <div><div class="k">Ghi chú</div><div class="v">@(string.IsNullOrWhiteSpace(Model.GhiChu) ? "—" : Model.GhiChu)</div></div>
+                @if (nvPhuTrach != null)
+                {
+                    <div><div class="k">Nhân viên xử lý</div><div class="v">@nvPhuTrach</div></div>
+                }
+            </div>
+        </div>
+
+        <div class="panel mb-3">
+            <div class="panel-head"><div><h3 class="panel-title">Chi tiết đồ giặt</h3><div class="panel-sub">@Model.ChiTiets.Count dòng đồ · @soSp sản phẩm</div></div></div>
+            <div class="tbl-wrap">
+                <table class="tbl">
+                    <thead><tr><th>Loại đồ</th><th>Dịch vụ</th><th>Số lượng</th><th>Tình trạng lúc nhận</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.ChiTiets)
+                        {
+                            <tr>
+                                <td>@UiHelper.TenChuaAvatar(c.LoaiDo?.TenLoaiDo)</td>
+                                <td>@c.DichVu?.TenDichVu</td>
+                                <td>@UiHelper.So(c.SoLuongKhoiLuong) @c.DonViTinh?.TenDonViTinh.ToLower()</td>
+                                <td>@(c.TinhTrangLucNhan ?? "—")</td>
+                                <td class="num">@UiHelper.Tien(c.DonGiaApDung)</td>
+                                <td class="num fw-bold">@UiHelper.Tien(c.ThanhTien)</td>
+                            </tr>
+                        }
+                        @if (Model.PhuPhi > 0)
+                        {
+                            <tr><td colspan="5" class="text-end text-muted">Phụ phí</td><td class="num fw-bold">@UiHelper.Tien(Model.PhuPhi)</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><div><h3 class="panel-title">Lịch sử xử lý</h3><div class="panel-sub">Các mốc được lưu tự động và không thể xóa.</div></div></div>
+            <div class="timeline">
+                @{
+                    bool dau = true;
+                }
+                @foreach (var l in lichSu)
+                {
+                    <div class="tl-item">
+                        <span class="tl-ic @(dau ? "now" : "")"><i class="bi @(dau ? "bi-arrow-repeat" : "bi-check2")"></i></span>
+                        <div><div class="tl-t">@l.NoiDung</div><div class="tl-s">@UiHelper.NgayGio(l.ThoiGian) • @l.NguoiThucHien</div></div>
+                    </div>
+                    dau = false;
+                }
+                @if (!lichSu.Any())
+                {
+                    <div class="text-muted">Chưa có lịch sử.</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="panel panel-pad mb-3">
+            <h3 class="panel-title mb-2">Thanh toán</h3>
+            <div class="pay-row"><span>Tổng tiền đơn</span><b>@UiHelper.Tien(Model.TongTienDuKien)</b></div>
+            <div class="pay-row"><span>Đã thanh toán</span><b class="text-success">@UiHelper.Tien(Model.DaThanhToan)</b></div>
+            <hr />
+            <div class="d-flex justify-content-between align-items-center"><span class="pay-row p-0">Còn phải thu</span><span class="pay-big">@UiHelper.Tien(Model.ConLai)</span></div>
+            <div class="my-2">@UiHelper.Badge(Model.TrangThaiThanhToan)</div>
+            @if (canWrite && Model.ConLai > 0 && Model.TrangThai != TrangThaiDon.DaHuy)
+            {
+                <a class="btn btn-primary w-100" asp-controller="ThanhToan" asp-action="Create" asp-route-donId="@Model.MaDonGiat"><i class="bi bi-currency-dollar"></i>Ghi nhận thanh toán</a>
+            }
+            @if (Model.ThanhToans.Any())
+            {
+                <a class="d-block text-center mt-2 small fw-bold" asp-controller="ThanhToan" asp-action="ChiTiet" asp-route-id="@Model.MaDonGiat">Xem các khoản đã thu</a>
+            }
+        </div>
+
+        <div class="panel panel-pad mb-3">
+            <h3 class="panel-title mb-3">Tiến độ xử lý</h3>
+            @if (cds.Any())
+            {
+                <div class="donut-wrap"><div class="donut" style="--p:@pct"><div><b>@pct%</b><small>@xong/@cds.Count công đoạn</small></div></div></div>
+                <div class="stage-list">
+                    @foreach (var c in cds)
+                    {
+                        var cls = c.TrangThai == QuyTrinh.HoanThanh ? "done" : c.TrangThai == QuyTrinh.DangThucHien ? "cur" : "";
+                        var ic = c.TrangThai == QuyTrinh.HoanThanh ? "bi-check-circle-fill" : c.TrangThai == QuyTrinh.DangThucHien ? "bi-arrow-repeat" : "bi-circle";
+                        <div class="@cls"><i class="bi @ic"></i>@c.TenCongDoan</div>
+                    }
+                </div>
+                if (vaiTro == VaiTroConst.Admin || vaiTro == VaiTroConst.NhanVienXuLy)
+                {
+
+                    <a class="btn btn-white w-100" asp-controller="PhanCong" asp-action="CapNhat" asp-route-id="@Model.MaDonGiat">Xem tiến độ chi tiết</a>
+                }
+            }
+            else
+            {
+                <div class="text-muted small mb-2">Đơn chưa được phân công xử lý.</div>
+                @if (vaiTro == VaiTroConst.Admin && (Model.TrangThai == TrangThaiDon.DaXacNhan || Model.TrangThai == TrangThaiDon.DangXuLy))
+                {
+                    <a class="btn btn-primary w-100" asp-controller="PhanCong" asp-action="Create" asp-route-donId="@Model.MaDonGiat">Phân công xử lý</a>
+                }
+            }
+        </div>
+
+        <div class="panel">
+            @if (Model.KhieuNais.Any())
+            {
+                <div class="panel-pad">
+                    <h3 class="panel-title mb-2">Khiếu nại (@Model.KhieuNais.Count)</h3>
+                    @foreach (var k in Model.KhieuNais)
+                    {
+                        <div class="py-2 border-top"><div class="fw-bold small">@UiHelper.MaKN(k.MaKhieuNai) · @k.NoiDung</div><div class="mt-1">@UiHelper.Badge(k.MucDo) @UiHelper.Badge(k.TrangThai)</div></div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="complaint-card">
+                    <span class="ci"><i class="bi bi-headset"></i></span><div><div class="fw-bold small">Chưa có khiếu nại</div><div class="text-muted" style="font-size:12px">Ghi nhận khi có phản hồi từ khách.</div></div>
+                    @if (canWrite && Model.TrangThai != TrangThaiDon.DaHuy && Model.TrangThai != TrangThaiDon.MoiTiepNhan)
+                    {
+                        <a class="ico ms-auto" asp-controller="KhieuNai" asp-action="Create" asp-route-donId="@Model.MaDonGiat" title="Tạo khiếu nại"><i class="bi bi-plus-lg"></i></a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (canWrite && tiepTheo.Length > 0)
+{
+    <div class="modal fade" id="mdTrangThai" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="CapNhatTrangThai" method="post">
+                    <input type="hidden" name="id" value="@Model.MaDonGiat" />
+                    <div class="modal-header"><h5 class="modal-title">Cập nhật trạng thái đơn</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="mb-3 text-muted">Trạng thái hiện tại: @UiHelper.Badge(Model.TrangThai)</div>
+                        <label class="flabel">Chuyển sang</label>
+                        <select name="trangThai" class="fselect">
+                            @foreach (var t in tiepTheo)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                        <div class="small text-muted mt-3">Mỗi lần chuyển trạng thái sẽ được ghi vào lịch sử xử lý.</div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-white" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary"><i class="bi bi-check2"></i>Cập nhật</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

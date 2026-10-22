@@ -1,0 +1,191 @@
+﻿@model TaoDonVM
+@{
+    ViewData["Title"] = "Tạo đơn giặt mới";
+    var khs = (List<KhachHang>)ViewBag.KhachHangs;
+    var nguoi = (List<TaiKhoan>)ViewBag.NguoiTiepNhans;
+}
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Danh sách đơn giặt</a>
+<form asp-action="Create" method="post" id="frm" novalidate>
+    <div class="page-head">
+        <div><h1>Tạo đơn giặt mới</h1><p>Tiếp nhận thông tin khách hàng và chi tiết đồ giặt.</p></div>
+        <div class="d-flex gap-2"><a class="btn btn-white" asp-action="Index">Hủy</a><button class="btn btn-primary"><i class="bi bi-check2"></i>Xác nhận đơn</button></div>
+    </div>
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <div class="grid-form">
+        <div>
+            <div class="form-sec">
+                <div class="sec-head"><span class="num">1</span><div><h3>Thông tin khách hàng</h3><p>Chọn khách đã có hoặc thêm khách hàng mới.</p></div></div>
+                <div class="fgrid">
+                    <div>
+                        <label class="flabel">Khách hàng *</label>
+                        <select asp-for="MaKhachHang" class="fselect" id="kh">
+                            <option value="">-- Chọn khách hàng --</option>
+                            @foreach (var k in khs)
+                            {
+                                <option value="@k.MaKhachHang">@k.HoTen — @k.SoDienThoai</option>
+                            }
+                        </select>
+                        <span asp-validation-for="MaKhachHang" class="ferr"></span>
+                        <a class="small fw-bold d-inline-block mt-1" href="@Url.Action("Index", "KhachHang", new { them = 1 })"><i class="bi bi-plus-circle"></i> Thêm khách hàng mới</a>
+                    </div>
+                    <div><label class="flabel">Số điện thoại</label><input class="finput" id="sdt" readonly /></div>
+                    <div><label class="flabel">Địa chỉ</label><input class="finput" id="diachi" readonly /></div>
+                </div>
+            </div>
+
+            <div class="form-sec">
+                <div class="sec-head"><span class="num">2</span><div><h3>Thông tin đơn giặt</h3><p>Ngày hẹn trả được gợi ý theo dịch vụ lâu nhất.</p></div></div>
+                <div class="fgrid">
+                    <div><label class="flabel">Ngày tiếp nhận *</label><input type="datetime-local" class="finput" id="ngayTN" name="NgayTiepNhan" value="@Model.NgayTiepNhan.ToString("yyyy-MM-ddTHH:mm")" /></div>
+                    <div>
+                        <label class="flabel">Ngày hẹn trả *</label><input type="datetime-local" class="finput" id="ngayHen" name="NgayHenTra" value="@Model.NgayHenTra.ToString("yyyy-MM-ddTHH:mm")" />
+                        <span asp-validation-for="NgayHenTra" class="ferr"></span>
+                    </div>
+                    <div>
+                        <label class="flabel">Người tiếp nhận *</label>
+                        <select asp-for="MaNguoiTiepNhan" class="fselect">
+                            @foreach (var t in nguoi)
+                            {
+                                <option value="@t.MaTaiKhoan">@t.HoTen</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="full"><label class="flabel">Ghi chú chung</label><input asp-for="GhiChu" class="finput" placeholder="Ví dụ: Khách cần gấp, gọi trước khi giao..." /><span asp-validation-for="GhiChu" class="ferr"></span></div>
+                </div>
+            </div>
+
+            <div class="form-sec">
+                <div class="sec-head justify-content-between">
+                    <div class="d-flex gap-3 align-items-center"><span class="num">3</span><div><h3>Chi tiết đồ giặt</h3><p>Đơn giá được lấy tự động từ bảng giá đang hiệu lực.</p></div></div>
+                    <button type="button" class="btn btn-white" id="btnThem"><i class="bi bi-plus-lg"></i>Thêm đồ giặt</button>
+                </div>
+                <div class="tbl-wrap">
+                    <table class="items-tbl">
+                        <thead><tr><th>Dịch vụ</th><th>Loại đồ</th><th>ĐVT</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Tình trạng lúc nhận</th><th></th></tr></thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <h3>Tóm tắt đơn hàng</h3>
+            <div class="sum-code"><span>Mã đơn dự kiến</span><b>@ViewBag.MaDuKien</b></div>
+            <div class="sum-row"><span>Số loại đồ</span><b id="sLoai">0</b></div>
+            <div class="sum-row"><span>Tổng số lượng</span><b id="sSL">0</b></div>
+            <div class="sum-row"><span>Tạm tính</span><b id="sTam">0 đ</b></div>
+            <div class="sum-row align-items-center">
+                <span>Phụ phí</span>
+                <input type="number" min="0" step="any" class="finput" style="width:120px;padding:5px 8px;text-align:right" id="phuPhi" name="PhuPhi" value="@Model.PhuPhi.ToString("0")" />
+            </div>
+            <hr />
+            <div class="sum-row"><span>Tổng tiền dự kiến</span></div>
+            <div class="sum-total" id="sTong">0 đ</div>
+            <div class="note-warn"><i class="bi bi-info-circle"></i><span>Tổng tiền được hệ thống tự động tính theo bảng giá hiệu lực tại ngày tiếp nhận.</span></div>
+            <button class="btn btn-primary w-100"><i class="bi bi-check2"></i>Xác nhận &amp; tạo đơn</button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const gia = @Html.Raw((string)ViewBag.GiaJson);
+        const dvs = @Html.Raw((string)ViewBag.DichVuJson);
+        const lds = @Html.Raw((string)ViewBag.LoaiDoJson);
+        const khs = @Html.Raw((string)ViewBag.KhJson);
+        const rowsInit = @Html.Raw((string)ViewBag.RowsJson);
+        const tbody = document.getElementById('rows');
+        const fmt = v => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' đ';
+        let henSuaTay = false;
+
+        // ----- khách hàng -----
+        const selKh = document.getElementById('kh');
+        function capNhatKh() {
+          const k = khs.find(x => String(x.id) === selKh.value);
+          document.getElementById('sdt').value = k ? k.sdt : '';
+          document.getElementById('diachi').value = k ? k.diaChi : '';
+        }
+        selKh.addEventListener('change', capNhatKh); capNhatKh();
+
+        // ----- dòng đồ giặt -----
+        function giaCua(dv, ld) { return gia.find(g => String(g.dv) === String(dv) && String(g.ld) === String(ld)); }
+        function optsLoaiDo(dv, chon) {
+          const co = gia.filter(g => String(g.dv) === String(dv)).map(g => g.ld);
+          let h = '<option value="">-- Loại đồ --</option>';
+          lds.filter(l => co.includes(l.id)).forEach(l => { h += `<option value="${l.id}" ${String(chon) === String(l.id) ? 'selected' : ''}>${l.ten}</option>`; });
+          return h;
+        }
+        function themDong(d) {
+          d = d || { dv: '', ld: '', sl: '', tt: '' };
+          const tr = document.createElement('tr');
+          let dvHtml = '<option value="">-- Dịch vụ --</option>';
+          dvs.forEach(x => { dvHtml += `<option value="${x.id}" ${String(d.dv) === String(x.id) ? 'selected' : ''}>${x.ten}</option>`; });
+          tr.innerHTML = `
+            <td style="min-width:150px"><select class="fselect dv" name="x">${dvHtml}</select></td>
+            <td style="min-width:140px"><select class="fselect ld" name="x">${optsLoaiDo(d.dv, d.ld)}</select></td>
+            <td class="dvt text-muted"></td>
+            <td style="width:100px"><input class="finput sl" type="number" step="0.01" min="0.01" name="x" value="${d.sl || ''}" /></td>
+            <td class="dg num"></td><td class="tt num fw-bold"></td>
+            <td style="min-width:150px"><input class="finput ttr" name="x" placeholder="Bình thường" value="${(d.tt || '').replace(/"/g, '&quot;')}" /></td>
+            <td><button type="button" class="ico del xoa" title="Xóa dòng"><i class="bi bi-trash3"></i></button></td>`;
+          tbody.appendChild(tr);
+          tr.querySelector('.dv').addEventListener('change', e => { tr.querySelector('.ld').innerHTML = optsLoaiDo(e.target.value, ''); tinh(); goiYHenTra(); });
+          tr.querySelector('.ld').addEventListener('change', tinh);
+          tr.querySelector('.sl').addEventListener('input', tinh);
+          tr.querySelector('.xoa').addEventListener('click', () => { tr.remove(); tinh(); goiYHenTra(); });
+          tinh();
+        }
+        document.getElementById('btnThem').addEventListener('click', () => themDong());
+
+        function tinh() {
+          let tam = 0, sl = 0, loai = 0;
+          tbody.querySelectorAll('tr').forEach(tr => {
+            const g = giaCua(tr.querySelector('.dv').value, tr.querySelector('.ld').value);
+            const q = parseFloat(tr.querySelector('.sl').value) || 0;
+            tr.querySelector('.dvt').textContent = g ? g.dvt : '';
+            tr.querySelector('.dg').textContent = g ? fmt(g.gia) : '—';
+            const t = g ? g.gia * q : 0;
+            tr.querySelector('.tt').textContent = g ? fmt(t) : '—';
+            if (g) { loai++; sl += q; tam += Math.round(t); }
+          });
+          const pp = parseFloat(document.getElementById('phuPhi').value) || 0;
+          document.getElementById('sLoai').textContent = loai;
+          document.getElementById('sSL').textContent = Math.round(sl * 100) / 100;
+          document.getElementById('sTam').textContent = fmt(tam);
+          document.getElementById('sTong').textContent = fmt(tam + pp);
+        }
+        document.getElementById('phuPhi').addEventListener('input', tinh);
+
+        // ----- gợi ý ngày hẹn trả theo dịch vụ lâu nhất -----
+        const p2 = n => String(n).padStart(2, '0');
+        const toLocal = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`;
+        document.getElementById('ngayHen').addEventListener('input', () => henSuaTay = true);
+        function goiYHenTra() {
+          if (henSuaTay) return;
+          let max = 0;
+          tbody.querySelectorAll('.dv').forEach(s => { const x = dvs.find(v => String(v.id) === s.value); if (x && x.gio > max) max = x.gio; });
+          if (max === 0) return;
+          const tn = new Date(document.getElementById('ngayTN').value);
+          if (isNaN(tn)) return;
+          tn.setHours(tn.getHours() + max + 4);
+          document.getElementById('ngayHen').value = toLocal(tn);
+        }
+        document.getElementById('ngayTN').addEventListener('change', goiYHenTra);
+
+        // ----- đánh lại chỉ số trước khi gửi form -----
+        document.getElementById('frm').addEventListener('submit', () => {
+          let i = 0;
+          tbody.querySelectorAll('tr').forEach(tr => {
+            tr.querySelector('.dv').name = `ChiTiets[${i}].MaDichVu`;
+            tr.querySelector('.ld').name = `ChiTiets[${i}].MaLoaiDo`;
+            tr.querySelector('.sl').name = `ChiTiets[${i}].SoLuong`;
+            tr.querySelector('.ttr').name = `ChiTiets[${i}].TinhTrang`;
+            i++;
+          });
+        });
+
+        if (rowsInit.length) { rowsInit.forEach(themDong); henSuaTay = true; } else { themDong(); }
+    </script>
+}
