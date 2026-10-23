@@ -1,0 +1,50 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang ThanhToan/Create. *@
+@model ThanhToanVM
+@{
+    ViewData["Title"] = "Ghi nhận thanh toán";
+    var dons = (List<Opt>)ViewBag.Dons;
+}
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Quản lý thanh toán</a>
+<div class="page-head"><div><h1>Ghi nhận thanh toán</h1><p>Chỉ hiển thị các đơn còn khoản phải thu. Số tiền không được vượt quá số còn lại.</p></div></div>
+<form asp-action="Create" method="post">
+  <div asp-validation-summary="All" class="alert alert-danger"></div>
+  <div class="form-sec" style="max-width:820px">
+    <div class="fgrid two">
+      <div class="full"><label class="flabel">Đơn giặt *</label>
+        <select asp-for="MaDonGiat" class="fselect" id="don"><option value="0">-- Chọn đơn giặt --</option>@foreach (var o in dons) { <option value="@o.Value">@o.Text</option> }</select>
+        <span asp-validation-for="MaDonGiat" class="ferr"></span></div>
+      <div><label class="flabel">Số tiền thanh toán (đ) *</label><input asp-for="SoTien" type="number" min="1" step="any" class="finput" id="soTien" /><span asp-validation-for="SoTien" class="ferr"></span>
+        <div class="d-flex justify-content-between align-items-center mt-1"><span class="small text-muted" id="conLai"></span><button type="button" class="btn btn-white btn-sm" id="btnDu">Thu đủ</button></div>
+        <div class="small fw-bold mt-1" style="color:var(--blue)" id="xemTien"></div></div>
+      <div><label class="flabel">Phương thức *</label>
+        <select asp-for="PhuongThuc" class="fselect"><option>Tiền mặt</option><option>Chuyển khoản</option><option>Quét QR</option></select></div>
+      <div class="full"><label class="flabel">Ghi chú</label><input asp-for="GhiChu" class="finput" /></div>
+    </div>
+    <div class="d-flex gap-2 mt-3"><button class="btn btn-primary"><i class="bi bi-check2"></i>Ghi nhận</button><a class="btn btn-white" asp-action="Index">Hủy</a></div>
+  </div>
+</form>
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+  const ds = @Html.Raw((string)ViewBag.ConLaiJson);
+  const sel = document.getElementById('don'), tien = document.getElementById('soTien'), cl = document.getElementById('conLai'), xem = document.getElementById('xemTien');
+  const fmt = v => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' đ';
+  const hienTai = () => ds.find(d => String(d.id) === sel.value);
+  function xemTruoc() {
+    const v = parseFloat(tien.value), x = hienTai();
+    if (!(v > 0)) { xem.textContent = ''; return; }
+    xem.textContent = 'Số tiền: ' + fmt(v) + (x && v > x.conLai ? '  (vượt quá số còn phải thu)' : '');
+    xem.style.color = (x && v > x.conLai) ? '#d23b3b' : 'var(--blue)';
+  }
+  function capNhat(tuDien) {
+    const x = hienTai();
+    cl.textContent = x ? 'Còn phải thu: ' + fmt(x.conLai) : '';
+    if (x && tuDien) tien.value = Math.round(x.conLai);
+    xemTruoc();
+  }
+  sel.addEventListener('change', () => capNhat(true));
+  tien.addEventListener('input', xemTruoc);
+  document.getElementById('btnDu').addEventListener('click', () => { const x = hienTai(); if (x) { tien.value = Math.round(x.conLai); xemTruoc(); } });
+  capNhat(false);
+</script>
+}
