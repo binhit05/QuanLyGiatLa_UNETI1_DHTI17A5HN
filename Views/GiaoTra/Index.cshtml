@@ -1,0 +1,43 @@
+@* Họ và tên: Lê Hoàng Anh | Mã sinh viên: 23103100214 | Nội dung thực hiện: Giao diện trang GiaoTra/Index. *@
+@model PagedList<DonGiat>
+@{ ViewData["Title"] = "Giao trả đồ"; bool admin = Context.Session.LayVaiTro() == VaiTroConst.Admin; }
+<div class="page-head">
+  <div><h1>Giao trả đồ</h1><p>Theo dõi các đơn đã sẵn sàng và ghi nhận giao trả.</p></div>
+  <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Ghi nhận giao trả</a>
+</div>
+<div class="panel">
+  @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Số điện thoại</th><th>Hẹn trả</th><th>Cần thu</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>
+      @foreach (var d in Model.Items)
+      {
+        <tr>
+          <td><a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a></td>
+          <td>@UiHelper.Nguoi(d.KhachHang?.HoTen, d.KhachHang?.SoDienThoai)</td>
+          <td>@d.KhachHang?.SoDienThoai</td>
+          <td>@UiHelper.NgayGio(d.NgayHenTra)</td>
+          <td class="num">@UiHelper.Tien(d.ConLai)</td>
+          <td>@UiHelper.Badge(d.TrangThaiHienThi)</td>
+          <td><div class="acts">
+            @if (d.GiaoTra == null)
+            { <a class="ico" asp-action="Create" asp-route-donId="@d.MaDonGiat" title="Ghi nhận giao trả"><i class="bi bi-pencil"></i></a> }
+            else
+            {
+              <a class="ico" asp-action="Edit" asp-route-id="@d.MaDonGiat" title="Sửa thông tin giao trả"><i class="bi bi-pencil"></i></a>
+              @if (admin)
+              {
+                <form asp-action="Delete" asp-route-id="@d.MaDonGiat" method="post" class="d-inline" onsubmit="return confirm('Hủy ghi nhận giao trả của đơn này? Đơn sẽ quay lại Chờ giao trả.');">
+                  <button class="ico del" title="Hủy giao trả"><i class="bi bi-trash3"></i></button></form>
+              }
+            }
+          </div></td>
+        </tr>
+      }
+      @if (!Model.Items.Any()) { <tr><td colspan="7" class="empty">Không có đơn nào phù hợp</td></tr> }
+      </tbody>
+    </table>
+  </div>
+  <partial name="_PhanTrang" model="Model" />
+</div>

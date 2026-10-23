@@ -1,0 +1,46 @@
+@* Họ và tên: Lê Hoàng Anh | Mã sinh viên: 23103100214 | Nội dung thực hiện: Giao diện trang PhanCong/Index. *@
+@model PagedList<PhanCongRow>
+@{
+    ViewData["Title"] = "Phân công & theo dõi xử lý";
+    bool admin = Context.Session.LayVaiTro() == VaiTroConst.Admin;
+}
+<div class="page-head">
+  <div><h1>Phân công &amp; theo dõi xử lý</h1><p>Theo dõi tiến độ công việc theo từng đơn và nhân viên.</p></div>
+  @if (admin) { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Phân công mới</a> }
+</div>
+<div class="mini-stats">
+  <div class="mini"><span>Chờ phân công</span><b>@ViewBag.ChoPhanCong</b></div>
+  <div class="mini"><span>Đang thực hiện</span><b>@ViewBag.DangThucHien</b></div>
+  <div class="mini"><span>Sắp đến hạn</span><b>@ViewBag.SapDenHan</b></div>
+  <div class="mini"><span>Quá hạn</span><b>@ViewBag.QuaHan</b></div>
+</div>
+<div class="panel">
+  @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+  @foreach (var r in Model.Items)
+  {
+    var d = r.Don;
+    int soMon = d.ChiTiets.Sum(c => (int)Math.Ceiling(c.SoLuongKhoiLuong));
+    var dv = string.Join(", ", d.ChiTiets.Select(c => c.DichVu!.TenDichVu).Distinct());
+    <div class="row-item">
+      <div class="c1">
+        <a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a>
+        <div class="fw-bold small">@d.KhachHang?.HoTen</div>
+        <div class="ps">@dv • @soMon món</div>
+      </div>
+      <div class="c2">
+        <div class="person"><span class="av">@UiHelper.ChuCai(r.NhanVien)</span><div><div class="k-lb">Nhân viên xử lý</div><div class="pn">@r.NhanVien</div></div></div>
+      </div>
+      <div class="c3">
+        <div class="prog-wrap">
+          <div class="prog-top"><span>Tiến độ</span><span>@r.TienDo%</span></div>
+          <div class="prog-bar @(r.Nguy ? "red" : "")"><div style="width:@r.TienDo%"></div></div>
+          <div class="ps mt-1">Công đoạn: @r.CongDoanHienTai</div>
+        </div>
+      </div>
+      <div class="c4"><div class="k-lb">Hạn hoàn thành</div><div class="pn">@d.NgayHenTra.ToString("dd/MM, HH:mm")</div></div>
+      <div><a class="btn btn-white" asp-action="CapNhat" asp-route-id="@d.MaDonGiat">Cập nhật</a></div>
+    </div>
+  }
+  @if (!Model.Items.Any()) { <div class="empty text-center text-muted py-5 border-top">Không có công việc nào đang xử lý.</div> }
+  <partial name="_PhanTrang" model="Model" />
+</div>
