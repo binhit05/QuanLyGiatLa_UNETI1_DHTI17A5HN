@@ -1,0 +1,102 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang ThongKe/BaoCao. *@
+@{
+    ViewData["Title"] = "Thống kê báo cáo";
+    DateTime tu = ViewBag.Tu, den = ViewBag.Den;
+    string loai = ViewBag.Loai;
+    var dvHienThi = (List<DongThongKe>)ViewBag.DvHienThi;
+    var theoDv = (List<DongThongKe>)ViewBag.TheoDv;
+    var topKhach = (List<DongThongKe>)ViewBag.TopKhach;
+    var congNo = (List<DonGiat>)ViewBag.CongNo;
+    var quaHan = (List<DonGiat>)ViewBag.QuaHan;
+    decimal? ssTien = ViewBag.SoSanhDoanhThu; double? ssDon = ViewBag.SoSanhDon;
+    var mau = new[] { "#2579d1", "#59b99a", "#9b7fe0", "#e8a33d", "#b3bfce" };
+    string Ss(double? p) => p == null ? "Chưa có dữ liệu kỳ trước" : ((p >= 0 ? "↑ " : "↓ ") + Math.Abs(p.Value).ToString("0.#") + "% so với kỳ trước");
+}
+<div class="page-head">
+  <div><h1>Thống kê báo cáo</h1><p>Phân tích hiệu quả kinh doanh theo khoảng thời gian.</p></div>
+  <a class="btn btn-white" asp-action="XuatBaoCao" asp-route-tuNgay="@tu.ToString("yyyy-MM-dd")" asp-route-denNgay="@den.ToString("yyyy-MM-dd")"><i class="bi bi-file-earmark-arrow-down"></i>Xuất báo cáo</a>
+</div>
+
+<form method="get" class="panel panel-pad d-flex flex-wrap gap-3 align-items-end mb-3">
+  <div><label class="flabel">Từ ngày</label><input type="date" name="tuNgay" value="@tu.ToString("yyyy-MM-dd")" class="finput" /></div>
+  <div><label class="flabel">Đến ngày</label><input type="date" name="denNgay" value="@den.ToString("yyyy-MM-dd")" class="finput" /></div>
+  <div><label class="flabel">Loại báo cáo</label>
+    <select name="loai" class="fselect" style="min-width:230px">
+      <option value="tong-quan" selected="@(loai == "tong-quan")">Tổng quan kinh doanh</option>
+      <option value="dich-vu" selected="@(loai == "dich-vu")">Doanh thu theo dịch vụ</option>
+      <option value="cong-no" selected="@(loai == "cong-no")">Công nợ khách hàng</option>
+      <option value="qua-han" selected="@(loai == "qua-han")">Đơn quá hạn</option>
+    </select></div>
+  <button class="btn btn-primary"><i class="bi bi-bar-chart-line"></i>Xem báo cáo</button>
+</form>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="lb">Tổng doanh thu</div><div class="vl">@UiHelper.Tien((decimal)ViewBag.DoanhThu)</div><div class="sb @(ssTien >= 0 ? "up" : "down")">@Ss(ssTien == null ? (double?)null : (double)ssTien.Value)</div></div>
+  <div class="kpi"><div class="lb">Tổng số đơn</div><div class="vl">@ViewBag.SoDon</div><div class="sb @(ssDon >= 0 ? "up" : "down")">@Ss(ssDon)</div></div>
+  <div class="kpi"><div class="lb">Giá trị trung bình / đơn</div><div class="vl">@UiHelper.Tien((decimal)ViewBag.TrungBinh)</div><div class="sb">Tính trên đơn không hủy</div></div>
+  <div class="kpi"><div class="lb">Tỷ lệ hoàn thành đúng hạn</div><div class="vl">@(((double)ViewBag.TyLe).ToString("0.0"))%</div><div class="sb">Trên các đơn đã giao trả</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head"><div><h3 class="panel-title">Doanh thu theo ngày</h3><div class="panel-sub">@tu.ToString("dd/MM/yyyy") - @den.ToString("dd/MM/yyyy") · đơn vị: triệu đồng</div></div></div>
+    <div class="chart-box"><canvas id="chartBC"></canvas></div>
+  </div>
+  <div class="panel panel-pad">
+    <h3 class="panel-title">Doanh thu theo dịch vụ</h3><div class="panel-sub mb-2">Tỷ trọng trong kỳ</div>
+    @{ int i = 0; }
+    @foreach (var d in dvHienThi)
+    {
+      <div class="legend-row"><span class="dot" style="background:@mau[i % mau.Length]"></span><span>@d.Ten</span><span class="amt">@UiHelper.TienRutGon(d.TongTien)</span><span class="pc">@d.TyLe.ToString("0.#")%</span></div>
+      i++;
+    }
+    @if (!dvHienThi.Any()) { <div class="text-muted py-4">Chưa có dữ liệu trong kỳ.</div> }
+  </div>
+</div>
+
+<div class="panel">
+  @if (loai == "tong-quan")
+  {
+    <div class="panel-head"><div><h3 class="panel-title">Top khách hàng theo giá trị đơn</h3><div class="panel-sub">5 khách hàng có tổng giá trị đơn cao nhất trong kỳ</div></div></div>
+    <table class="tbl"><thead><tr><th>Khách hàng</th><th>Số đơn</th><th>Tổng giá trị</th></tr></thead><tbody>
+      @foreach (var x in topKhach) { <tr><td>@UiHelper.TenChuaAvatar(x.Ten)</td><td>@x.SoLuong đơn</td><td class="num fw-bold">@UiHelper.Tien(x.TongTien)</td></tr> }
+      @if (!topKhach.Any()) { <tr><td colspan="3" class="empty">Không có dữ liệu</td></tr> }
+    </tbody></table>
+  }
+  else if (loai == "dich-vu")
+  {
+    <div class="panel-head"><div><h3 class="panel-title">Chi tiết doanh thu theo dịch vụ</h3></div></div>
+    <table class="tbl"><thead><tr><th>Dịch vụ</th><th>Số dòng đồ giặt</th><th>Doanh thu</th><th>Tỷ trọng</th></tr></thead><tbody>
+      @foreach (var x in theoDv) { <tr><td class="fw-bold">@x.Ten</td><td>@x.SoLuong</td><td class="num fw-bold">@UiHelper.Tien(x.TongTien)</td><td>@x.TyLe.ToString("0.#")%</td></tr> }
+      @if (!theoDv.Any()) { <tr><td colspan="4" class="empty">Không có dữ liệu</td></tr> }
+    </tbody></table>
+  }
+  else if (loai == "cong-no")
+  {
+    <div class="panel-head"><div><h3 class="panel-title">Công nợ khách hàng</h3><div class="panel-sub">Các đơn trong kỳ còn khoản phải thu</div></div></div>
+    <table class="tbl"><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Tổng tiền</th><th>Đã trả</th><th>Còn phải thu</th></tr></thead><tbody>
+      @foreach (var d in congNo) { <tr><td><a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a></td><td>@UiHelper.Nguoi(d.KhachHang?.HoTen, d.KhachHang?.SoDienThoai)</td><td class="num">@UiHelper.Tien(d.TongTienDuKien)</td><td class="num">@UiHelper.Tien(d.DaThanhToan)</td><td class="num fw-bold text-danger">@UiHelper.Tien(d.ConLai)</td></tr> }
+      @if (!congNo.Any()) { <tr><td colspan="5" class="empty">Không có công nợ trong kỳ</td></tr> }
+    </tbody></table>
+  }
+  else
+  {
+    <div class="panel-head"><div><h3 class="panel-title">Đơn quá hạn</h3><div class="panel-sub">Đơn tiếp nhận trong kỳ đã quá ngày hẹn trả mà chưa hoàn thành</div></div></div>
+    <table class="tbl"><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Hẹn trả</th><th>Trạng thái xử lý</th><th>Tổng tiền</th></tr></thead><tbody>
+      @foreach (var d in quaHan) { <tr><td><a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a></td><td>@UiHelper.Nguoi(d.KhachHang?.HoTen, d.KhachHang?.SoDienThoai)</td><td>@UiHelper.NgayGio(d.NgayHenTra)</td><td>@UiHelper.Badge(d.TrangThai)</td><td class="num">@UiHelper.Tien(d.TongTienDuKien)</td></tr> }
+      @if (!quaHan.Any()) { <tr><td colspan="5" class="empty">Không có đơn quá hạn trong kỳ</td></tr> }
+    </tbody></table>
+  }
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  new Chart(document.getElementById('chartBC'), {
+    type: 'bar',
+    data: { labels: @Html.Raw((string)ViewBag.NhanJson), datasets: [{ data: @Html.Raw((string)ViewBag.GiaTriJson), backgroundColor: '#4a9ae0', borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#eef3f8' } } } }
+  });
+</script>
+}

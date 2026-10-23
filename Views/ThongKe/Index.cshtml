@@ -1,0 +1,128 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang ThongKe/Index. *@
+@model DashboardVM
+@{
+    ViewData["Title"] = "Tổng quan";
+    var hoTen = Context.Session.LayHoTen();
+    int gio = DateTime.Now.Hour;
+    string loiChao = gio < 11 ? "Chào buổi sáng" : gio < 14 ? "Chào buổi trưa" : gio < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+    string SoSanh(decimal hom, decimal qua)
+    {
+        if (qua <= 0) return hom > 0 ? "Mới phát sinh hôm nay" : "Chưa có so sánh";
+        var p = Math.Round((hom - qua) * 100 / qua, 1);
+        return (p >= 0 ? "+" : "") + p.ToString("0.#", new System.Globalization.CultureInfo("vi-VN")) + "% so với hôm qua";
+    }
+    bool tangDon = Model.DonHomNay >= Model.DonHomQua;
+    bool tangTien = Model.DoanhThuHomNay >= Model.DoanhThuHomQua;
+}
+<div class="page-head">
+  <div>
+    <h1>@loiChao, @UiHelper.TenCuoi(hoTen)</h1>
+    <p>Đây là tình hình hoạt động của cửa hàng hôm nay, @DateTime.Now.ToString("dd/MM/yyyy").</p>
+  </div>
+  @if (Context.Session.LayVaiTro() != VaiTroConst.NhanVienXuLy)
+  {
+    <a class="btn btn-primary" asp-controller="DonGiat" asp-action="Create"><i class="bi bi-plus-lg"></i>Tạo đơn giặt</a>
+  }
+</div>
+
+@{
+    var vt = Context.Session.LayVaiTro();
+    bool quyenTien = vt == VaiTroConst.Admin || vt == VaiTroConst.NhanVienTiepNhan;
+    string homNay = DateTime.Today.ToString("yyyy-MM-dd");
+    string lkDonHomNay = Url.Action("Index", "DonGiat", new { ngay = homNay }) ?? "#";
+    string lkDang = Url.Action("Index", "DonGiat", new { tab = "dang" }) ?? "#";
+    string lkCho = Url.Action("Index", "DonGiat", new { tab = "cho" }) ?? "#";
+    string lkQuaHan = Url.Action("Index", "DonGiat", new { tab = "quahan" }) ?? "#";
+    string lkDoanhThu = Url.Action("Index", "ThanhToan") ?? "#";
+    string lkConThu = Url.Action("Index", "ThanhToan", new { sort = "no" }) ?? "#";
+    string lkKhieuNai = Url.Action("Index", "KhieuNai", new { trangThai = "chua" }) ?? "#";
+}
+<div class="stat-grid">
+  <a class="stat" href="@lkDonHomNay"><span class="ic ic-blue"><i class="bi bi-receipt"></i></span><div class="grow"><div class="lb">Đơn nhận hôm nay</div><div class="vl">@Model.DonHomNay</div><div class="sb @(tangDon ? "up" : "down")">@SoSanh(Model.DonHomNay, Model.DonHomQua)</div></div><i class="bi bi-arrow-up-right go"></i></a>
+  <a class="stat" href="@lkDang"><span class="ic ic-purple"><i class="bi bi-arrow-repeat"></i></span><div class="grow"><div class="lb">Đang xử lý</div><div class="vl">@Model.DangXuLy</div><div class="sb">@Model.SapDenHan đơn sắp đến hạn</div></div><i class="bi bi-arrow-up-right go"></i></a>
+  <a class="stat" href="@lkCho"><span class="ic ic-green"><i class="bi bi-box-seam"></i></span><div class="grow"><div class="lb">Chờ giao trả</div><div class="vl">@Model.ChoGiaoTra</div><div class="sb up">Sẵn sàng bàn giao</div></div><i class="bi bi-arrow-up-right go"></i></a>
+  <a class="stat" href="@lkQuaHan"><span class="ic ic-red"><i class="bi bi-clock"></i></span><div class="grow"><div class="lb">Đơn quá hẹn</div><div class="vl">@Model.QuaHan</div><div class="sb down">Cần xử lý ngay</div></div><i class="bi bi-arrow-up-right go"></i></a>
+  @if (quyenTien)
+  {
+    <a class="stat" href="@lkDoanhThu"><span class="ic ic-green"><i class="bi bi-currency-dollar"></i></span><div class="grow"><div class="lb">Doanh thu hôm nay</div><div class="vl">@UiHelper.TienRutGon(Model.DoanhThuHomNay)</div><div class="sb @(tangTien ? "up" : "down")">@SoSanh(Model.DoanhThuHomNay, Model.DoanhThuHomQua)</div></div><i class="bi bi-arrow-up-right go"></i></a>
+    <a class="stat" href="@lkConThu"><span class="ic ic-orange"><i class="bi bi-cash-coin"></i></span><div class="grow"><div class="lb">Còn phải thu</div><div class="vl">@UiHelper.TienRutGon(Model.ConPhaiThu)</div><div class="sb">Trên @Model.SoDonConThu đơn giặt</div></div><i class="bi bi-arrow-up-right go"></i></a>
+    <a class="stat" href="@lkKhieuNai"><span class="ic ic-red"><i class="bi bi-headset"></i></span><div class="grow"><div class="lb">Khiếu nại đang xử lý</div><div class="vl">@Model.KhieuNaiDangXuLy</div><div class="sb down">@Model.KhieuNaiCao khiếu nại mức cao</div></div><i class="bi bi-arrow-up-right go"></i></a>
+  }
+  else
+  {
+    <div class="stat"><span class="ic ic-green"><i class="bi bi-currency-dollar"></i></span><div class="grow"><div class="lb">Doanh thu hôm nay</div><div class="vl">@UiHelper.TienRutGon(Model.DoanhThuHomNay)</div><div class="sb @(tangTien ? "up" : "down")">@SoSanh(Model.DoanhThuHomNay, Model.DoanhThuHomQua)</div></div></div>
+    <div class="stat"><span class="ic ic-orange"><i class="bi bi-cash-coin"></i></span><div class="grow"><div class="lb">Còn phải thu</div><div class="vl">@UiHelper.TienRutGon(Model.ConPhaiThu)</div><div class="sb">Trên @Model.SoDonConThu đơn giặt</div></div></div>
+    <div class="stat"><span class="ic ic-red"><i class="bi bi-headset"></i></span><div class="grow"><div class="lb">Khiếu nại đang xử lý</div><div class="vl">@Model.KhieuNaiDangXuLy</div><div class="sb down">@Model.KhieuNaiCao khiếu nại mức cao</div></div></div>
+  }
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head">
+      <div><h3 class="panel-title">Doanh thu 7 ngày gần nhất</h3><div class="panel-sub" id="donvi">Đơn vị: triệu đồng</div></div>
+      <select id="khoang" class="sel" style="min-width:110px"><option value="7">7 ngày</option><option value="30">30 ngày</option></select>
+    </div>
+    <div class="chart-box"><canvas id="chartDT"></canvas></div>
+  </div>
+  <div class="panel panel-pad">
+    <div class="d-flex justify-content-between"><div><h3 class="panel-title">Dịch vụ phổ biến</h3><div class="panel-sub">Theo số lượt sử dụng tháng này</div></div></div>
+    @{ var mau = new[] { "#2579d1", "#5aa7e8", "#59b99a", "#9b7fe0", "#b3bfce" }; int k = 0; }
+    @foreach (var d in Model.DichVuPhoBien)
+    {
+      <div class="hbar"><div class="top"><span>@d.Ten</span><span>@d.TyLe%</span></div>
+        <div class="track"><div class="fill" style="width:@d.TyLe%;background:@mau[k % mau.Length]"></div></div></div>
+      k++;
+    }
+    @if (!Model.DichVuPhoBien.Any()) { <div class="text-muted py-4">Chưa có dữ liệu trong tháng.</div> }
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div><h3 class="panel-title">Đơn giặt gần đây</h3><div class="panel-sub">Cập nhật theo thời gian thực</div></div>
+    <a class="fw-bold" asp-controller="DonGiat" asp-action="Index">Xem tất cả <i class="bi bi-chevron-right"></i></a>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Dịch vụ</th><th>Tiếp nhận</th><th>Hẹn trả</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>
+      @foreach (var d in Model.DonGanDay)
+      {
+        <tr>
+          <td><a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat">@UiHelper.MaDon(d)</a></td>
+          <td>@UiHelper.Nguoi(d.KhachHang?.HoTen, d.KhachHang?.SoDienThoai)</td>
+          <td>@string.Join(", ", d.ChiTiets.Select(c => c.DichVu!.TenDichVu).Distinct())</td>
+          <td>@UiHelper.NgayGio(d.NgayTiepNhan)</td>
+          <td>@UiHelper.NgayGio(d.NgayHenTra)</td>
+          <td class="num">@UiHelper.Tien(d.TongTienDuKien)</td>
+          <td>@UiHelper.Badge(d.TrangThaiHienThi)</td>
+          <td><a class="ico" asp-controller="DonGiat" asp-action="Details" asp-route-id="@d.MaDonGiat" title="Xem"><i class="bi bi-eye"></i></a></td>
+        </tr>
+      }
+      @if (!Model.DonGanDay.Any()) { <tr><td colspan="8" class="empty">Chưa có đơn giặt nào.</td></tr> }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const du = {
+    "7":  { labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Nhan)),   data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Gia7)) },
+    "30": { labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Nhan30)), data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Gia30)) }
+  };
+  const ctx = document.getElementById('chartDT').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 260);
+  grad.addColorStop(0, 'rgba(37,121,209,.28)'); grad.addColorStop(1, 'rgba(37,121,209,0)');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: du["7"].labels, datasets: [{ data: du["7"].data, borderColor: '#2579d1', backgroundColor: grad, fill: true, tension: .4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#eef3f8' } } } }
+  });
+  document.getElementById('khoang').addEventListener('change', function () {
+    chart.data.labels = du[this.value].labels; chart.data.datasets[0].data = du[this.value].data; chart.update();
+  });
+</script>
+}
