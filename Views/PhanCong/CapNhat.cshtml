@@ -1,0 +1,70 @@
+@* Họ và tên: Lê Hoàng Anh | Mã sinh viên: 23103100214 | Nội dung thực hiện: Giao diện trang PhanCong/CapNhat. *@
+@model DonGiat
+@{
+    ViewData["Title"] = "Cập nhật tiến độ";
+    var cds = Model.CongDoans.OrderBy(c => c.ThuTu).ToList();
+    var nvs = (List<NhanVien>)ViewBag.NhanViens;
+    bool admin = Context.Session.LayVaiTro() == VaiTroConst.Admin;
+    int xong = cds.Count(c => c.TrangThai == QuyTrinh.HoanThanh);
+    int pct = cds.Count > 0 ? xong * 100 / cds.Count : 0;
+    var pc = Model.PhanCongs.FirstOrDefault();
+    bool dangXuLy = Model.TrangThai == TrangThaiDon.DaXacNhan || Model.TrangThai == TrangThaiDon.DangXuLy;
+    bool coDangLam = cds.Any(c => c.TrangThai == QuyTrinh.DangThucHien);
+}
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Phân công &amp; theo dõi xử lý</a>
+<div class="page-head">
+  <div><div class="title-line"><h1>Đơn @UiHelper.MaDon(Model)</h1>@UiHelper.Badge(Model.TrangThaiHienThi)</div>
+    <p>@Model.KhachHang?.HoTen · Hẹn trả @UiHelper.NgayGio(Model.NgayHenTra) · Phụ trách: <b>@(pc?.NhanVien?.HoTen ?? "chưa phân công")</b></p></div>
+  <a class="btn btn-white" asp-controller="DonGiat" asp-action="Details" asp-route-id="@Model.MaDonGiat">Xem chi tiết đơn</a>
+</div>
+<div class="grid-detail">
+  <div class="panel">
+    <div class="panel-head"><div><h3 class="panel-title">Các công đoạn xử lý</h3><div class="panel-sub">Thực hiện lần lượt từng công đoạn theo thứ tự.</div></div></div>
+    @foreach (var c in cds)
+    {
+      var cls = c.TrangThai == QuyTrinh.HoanThanh ? "done" : c.TrangThai == QuyTrinh.DangThucHien ? "cur" : "";
+      <div class="stage-row @cls">
+        <span class="si">@(c.TrangThai == QuyTrinh.HoanThanh ? "✓" : c.ThuTu.ToString())</span>
+        <div class="flex-grow-1">
+          <div class="fw-bold">@c.TenCongDoan</div>
+          <div class="ps">
+            @if (c.ThoiGianBatDau != null) { <span>Bắt đầu @UiHelper.NgayGio(c.ThoiGianBatDau.Value)</span> }
+            @if (c.ThoiGianKetThuc != null) { <span> · Xong @UiHelper.NgayGio(c.ThoiGianKetThuc.Value)</span> }
+            @if (c.ThoiGianBatDau == null) { <span>Chưa bắt đầu</span> }
+          </div>
+        </div>
+        @UiHelper.Badge(c.TrangThai)
+        @if (dangXuLy && c.TrangThai == QuyTrinh.ChuaBatDau)
+        {
+          bool truocXong = !cds.Any(x => x.ThuTu < c.ThuTu && x.TrangThai != QuyTrinh.HoanThanh);
+          <form asp-action="CapNhatCongDoan" method="post" class="m-0"><input type="hidden" name="id" value="@c.MaCongDoan" /><input type="hidden" name="hanhDong" value="batdau" />
+            <button class="btn btn-white" disabled="@(!truocXong || coDangLam)">Bắt đầu</button></form>
+        }
+        @if (dangXuLy && c.TrangThai == QuyTrinh.DangThucHien)
+        {
+          <form asp-action="CapNhatCongDoan" method="post" class="m-0"><input type="hidden" name="id" value="@c.MaCongDoan" /><input type="hidden" name="hanhDong" value="hoanthanh" />
+            <button class="btn btn-primary">Hoàn thành</button></form>
+        }
+      </div>
+    }
+    @if (!cds.Any()) { <div class="p-4 text-muted border-top">Đơn chưa được phân công nên chưa có công đoạn.</div> }
+  </div>
+  <div>
+    <div class="panel panel-pad mb-3">
+      <h3 class="panel-title mb-2">Tiến độ</h3>
+      <div class="donut-wrap"><div class="donut" style="--p:@pct"><div><b>@pct%</b><small>@xong/@cds.Count công đoạn</small></div></div></div>
+      @if (Model.TrangThai == TrangThaiDon.ChoGiaoTra) { <div class="note-warn" style="margin:0"><i class="bi bi-check-circle"></i><span>Đã xử lý xong, đơn đang chờ giao trả.</span></div> }
+    </div>
+    @if (admin && pc != null && dangXuLy)
+    {
+      <div class="panel panel-pad">
+        <h3 class="panel-title mb-2">Phân công lại</h3>
+        <form asp-action="DoiNhanVien" method="post">
+          <input type="hidden" name="id" value="@Model.MaDonGiat" />
+          <select name="maNhanVien" class="fselect mb-2">@foreach (var n in nvs) { <option value="@n.MaNhanVien" selected="@(n.MaNhanVien == pc.MaNhanVien)">@n.HoTen</option> }</select>
+          <button class="btn btn-white w-100">Đổi nhân viên phụ trách</button>
+        </form>
+      </div>
+    }
+  </div>
+</div>
