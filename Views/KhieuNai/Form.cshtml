@@ -1,0 +1,40 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang KhieuNai/Form. *@
+@model KhieuNai
+@{
+    bool moi = Model.MaKhieuNai == 0;
+    ViewData["Title"] = moi ? "Tiếp nhận khiếu nại" : "Xử lý khiếu nại";
+    var dons = (List<Opt>)ViewBag.Dons;
+    var nguoi = (List<TaiKhoan>)ViewBag.NguoiPhuTrachs;
+}
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Quản lý khiếu nại</a>
+<div class="page-head"><div><h1>@ViewData["Title"]</h1>@if (!moi) { <p>@UiHelper.MaKN(Model.MaKhieuNai) · tạo ngày @UiHelper.NgayGio(Model.NgayTao)</p> }</div></div>
+<form asp-action="@(moi ? "Create" : "Edit")" method="post">
+  <input type="hidden" asp-for="MaKhieuNai" />
+  <div asp-validation-summary="All" class="alert alert-danger"></div>
+  <div class="form-sec" style="max-width:820px">
+    <div class="fgrid two">
+      <div class="full"><label class="flabel">Đơn giặt *</label>
+        @if (moi)
+        {
+          <select asp-for="MaDonGiat" class="fselect"><option value="0">-- Chọn đơn giặt --</option>@foreach (var o in dons) { <option value="@o.Value">@o.Text</option> }</select>
+        }
+        else
+        {
+          <input type="hidden" asp-for="MaDonGiat" />
+          <input class="finput" readonly value="@(dons.FirstOrDefault(o => o.Value == Model.MaDonGiat.ToString())?.Text ?? ("Đơn #" + Model.MaDonGiat))" />
+        }
+        <span asp-validation-for="MaDonGiat" class="ferr"></span></div>
+      <div class="full"><label class="flabel">Nội dung khiếu nại *</label><textarea asp-for="NoiDung" class="ftext" rows="3"></textarea><span asp-validation-for="NoiDung" class="ferr"></span></div>
+      <div><label class="flabel">Mức độ</label><select asp-for="MucDo" class="fselect"><option>Thấp</option><option>Trung bình</option><option>Cao</option></select></div>
+      <div><label class="flabel">Người phụ trách</label>
+        <select asp-for="NguoiPhuTrach" class="fselect">@foreach (var t in nguoi) { <option value="@t.HoTen">@t.HoTen</option> }</select></div>
+      @if (!moi)
+      {
+        <div><label class="flabel">Trạng thái</label><select asp-for="TrangThai" class="fselect"><option>Mới tiếp nhận</option><option>Đang xử lý</option><option>Đã giải quyết</option></select></div>
+        <div class="full"><label class="flabel">Hướng xử lý</label><textarea asp-for="HuongXuLy" class="ftext" rows="3" placeholder="Bắt buộc khi chuyển sang Đã giải quyết"></textarea><span asp-validation-for="HuongXuLy" class="ferr"></span></div>
+      }
+    </div>
+    <div class="d-flex gap-2 mt-3"><button class="btn btn-primary"><i class="bi bi-check2"></i>Lưu</button><a class="btn btn-white" asp-action="Index">Hủy</a></div>
+  </div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

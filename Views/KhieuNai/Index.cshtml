@@ -1,0 +1,40 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang KhieuNai/Index. *@
+@model PagedList<KhieuNai>
+@{ ViewData["Title"] = "Quản lý khiếu nại"; bool admin = Context.Session.LayVaiTro() == VaiTroConst.Admin; }
+<div class="page-head">
+  <div><h1>Quản lý khiếu nại</h1><p>Tiếp nhận, phân loại và theo dõi hướng xử lý phản hồi.</p></div>
+  <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Tiếp nhận khiếu nại</a>
+</div>
+<div class="panel">
+  @await Html.PartialAsync("_FilterBar", (FilterBarVM)ViewBag.Filter)
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Mã KN</th><th>Mã đơn</th><th>Khách hàng</th><th>Nội dung</th><th>Mức độ</th><th>Ngày tạo</th><th>Phụ trách</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>
+      @foreach (var k in Model.Items)
+      {
+        <tr>
+          <td><a class="code" asp-action="Edit" asp-route-id="@k.MaKhieuNai">@UiHelper.MaKN(k.MaKhieuNai)</a></td>
+          <td><a class="code" asp-controller="DonGiat" asp-action="Details" asp-route-id="@k.MaDonGiat">@UiHelper.MaDon(k.DonGiat!)</a></td>
+          <td>@UiHelper.TenChuaAvatar(k.DonGiat!.KhachHang?.HoTen)</td>
+          <td style="max-width:240px">@k.NoiDung</td>
+          <td>@UiHelper.Badge(k.MucDo)</td>
+          <td>@UiHelper.Ngay(k.NgayTao)</td>
+          <td>@k.NguoiPhuTrach</td>
+          <td>@UiHelper.Badge(k.TrangThai)</td>
+          <td><div class="acts">
+            <a class="ico" asp-action="Edit" asp-route-id="@k.MaKhieuNai" title="Xử lý"><i class="bi bi-pencil"></i></a>
+            @if (admin)
+            {
+              <form asp-action="Delete" asp-route-id="@k.MaKhieuNai" method="post" class="d-inline" onsubmit="return confirm('Xóa khiếu nại này?');">
+                <button class="ico del" title="Xóa"><i class="bi bi-trash3"></i></button></form>
+            }
+          </div></td>
+        </tr>
+      }
+      @if (!Model.Items.Any()) { <tr><td colspan="9" class="empty">Không có khiếu nại phù hợp</td></tr> }
+      </tbody>
+    </table>
+  </div>
+  <partial name="_PhanTrang" model="Model" />
+</div>
