@@ -1,0 +1,39 @@
+@* Họ và tên: Lê Duy Khánh | Mã sinh viên: 23103100216 | Nội dung thực hiện: Giao diện trang ThanhToan/ChiTiet. *@
+@model DonGiat
+@{ ViewData["Title"] = "Chi tiết thanh toán"; bool admin = Context.Session.LayVaiTro() == VaiTroConst.Admin; }
+<a class="back-link" asp-action="Index"><i class="bi bi-chevron-left"></i> Quản lý thanh toán</a>
+<div class="page-head">
+  <div><div class="title-line"><h1>@UiHelper.MaTT(Model.MaDonGiat) · @UiHelper.MaDon(Model)</h1>@UiHelper.Badge(Model.TrangThaiThanhToan)</div><p>Khách hàng: @Model.KhachHang?.HoTen</p></div>
+  @if (Model.ConLai > 0 && Model.TrangThai != TrangThaiDon.DaHuy) { <a class="btn btn-primary" asp-action="Create" asp-route-donId="@Model.MaDonGiat"><i class="bi bi-currency-dollar"></i>Ghi nhận thanh toán</a> }
+</div>
+<div class="stat-grid three">
+  <div class="stat"><span class="ic ic-blue"><i class="bi bi-receipt"></i></span><div><div class="lb">Tổng tiền đơn</div><div class="vl" style="font-size:22px">@UiHelper.Tien(Model.TongTienDuKien)</div></div></div>
+  <div class="stat"><span class="ic ic-green"><i class="bi bi-check2-circle"></i></span><div><div class="lb">Đã thanh toán</div><div class="vl" style="font-size:22px">@UiHelper.Tien(Model.DaThanhToan)</div></div></div>
+  <div class="stat"><span class="ic ic-orange"><i class="bi bi-cash-coin"></i></span><div><div class="lb">Còn phải thu</div><div class="vl" style="font-size:22px">@UiHelper.Tien(Model.ConLai)</div></div></div>
+</div>
+<div class="panel">
+  <div class="panel-head"><h3 class="panel-title">Các khoản đã thanh toán</h3></div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Thời gian</th><th>Số tiền</th><th>Phương thức</th><th>Người thu</th><th>Ghi chú</th><th></th></tr></thead>
+      <tbody>
+      @foreach (var t in Model.ThanhToans.OrderByDescending(x => x.NgayThanhToan))
+      {
+        <tr>
+          <td>@UiHelper.NgayGio(t.NgayThanhToan)</td>
+          <td class="num fw-bold">@UiHelper.Tien(t.SoTien)</td>
+          <td>@t.PhuongThuc</td><td>@t.NguoiThucHien</td><td>@t.GhiChu</td>
+          <td>
+            @if (admin && Model.TrangThai != TrangThaiDon.HoanThanh)
+            {
+              <form asp-action="XoaKhoan" asp-route-id="@t.MaThanhToan" method="post" class="d-inline" onsubmit="return confirm('Xóa khoản thanh toán này?');">
+                <button class="ico del" title="Xóa"><i class="bi bi-trash3"></i></button></form>
+            }
+          </td>
+        </tr>
+      }
+      @if (!Model.ThanhToans.Any()) { <tr><td colspan="6" class="empty">Đơn này chưa có khoản thanh toán nào</td></tr> }
+      </tbody>
+    </table>
+  </div>
+</div>
