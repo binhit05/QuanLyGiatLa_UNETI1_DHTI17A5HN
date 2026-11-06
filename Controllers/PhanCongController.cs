@@ -8,13 +8,21 @@ using QuanLyGiatLa_UNETI1_DHTI17A5HN.Filters;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Helpers;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
 using QuanLyGiatLa_UNETI1_DHTI17A5HN.ViewModels;
+using QuanLyGiatLa_UNETI1_DHTI17A5HN.Services.Interfaces;
 namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Controllers;
 
 // Phân công & theo dõi xử lý: Admin xem/phân công tất cả, nhân viên xử lý chỉ thấy việc của mình
 [PhanQuyen(VaiTroConst.Admin, VaiTroConst.NhanVienXuLy)]
 public class PhanCongController : BaseController
 {
-    public PhanCongController(AppDbContext db) : base(db) { }
+    private readonly IEmailService _emailService;
+
+    public PhanCongController(
+        AppDbContext db,
+        IEmailService emailService) : base(db)
+    {
+        _emailService = emailService;
+    }
 
     private IQueryable<DonGiat> NapDon()
     {
@@ -131,49 +139,147 @@ public class PhanCongController : BaseController
         return View(d);
     }
 
+
     [HttpPost]
-    public IActionResult CapNhatCongDoan(int id, string hanhDong)
+    public async Task<IActionResult> CapNhatCongDoan(int id, string hanhDong)
     {
         var cd = _db.CongDoans.Find(id);
         if (cd == null) return NotFound();
+
         var don = NapDon().FirstOrDefault(x => x.MaDonGiat == cd.MaDonGiat);
         if (don == null) return NotFound();
-        if (!LaAdmin && !LaViecCuaToi(don)) return RedirectToAction("TuChoiTruyCap", "TaiKhoan");
-        if (don.TrangThai != TrangThaiDon.DaXacNhan && don.TrangThai != TrangThaiDon.DangXuLy)
-        { BaoLoi("Đơn không ở trạng thái xử lý nên không thể cập nhật công đoạn."); return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat }); }
+
+        if (!LaAdmin && !LaViecCuaToi(don))
+            return RedirectToAction("TuChoiTruyCap", "TaiKhoan");
+
+        if (don.TrangThai != TrangThaiDon.DaXacNhan &&
+            don.TrangThai != TrangThaiDon.DangXuLy)
+        {
+            BaoLoi("Đơn không ở trạng thái xử lý nên không thể cập nhật công đoạn.");
+            return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+        }
 
         var cacCd = don.CongDoans.OrderBy(c => c.ThuTu).ToList();
         var now = DateTime.Now;
+
+        // Đánh dấu đơn vừa chuyển sang trạng thái Chờ giao trả
+        bool vuaChuyenChoGiaoTra = false;
+
         if (hanhDong == "batdau")
         {
-            if (cd.TrangThai != QuyTrinh.ChuaBatDau) { BaoLoi("Công đoạn này đã bắt đầu."); return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat }); }
-            if (cacCd.Any(c => c.ThuTu < cd.ThuTu && c.TrangThai != QuyTrinh.HoanThanh)) { BaoLoi("Phải hoàn thành các công đoạn trước đó."); return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat }); }
-            if (cacCd.Any(c => c.TrangThai == QuyTrinh.DangThucHien)) { BaoLoi("Đang có công đoạn khác thực hiện, hãy hoàn thành trước."); return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat }); }
-            cd.TrangThai = QuyTrinh.DangThucHien; cd.ThoiGianBatDau = now;
-            if (don.TrangThai == TrangThaiDon.DaXacNhan) { don.TrangThai = TrangThaiDon.DangXuLy; GhiLichSu(don.MaDonGiat, "Đơn chuyển sang Đang xử lý"); }
-            GhiLichSu(don.MaDonGiat, "Đang thực hiện công đoạn " + cd.TenCongDoan.ToLower());
+            if (cd.TrangThai != QuyTrinh.ChuaBatDau)
+            {
+                BaoLoi("Công đoạn này đã bắt đầu.");
+                return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+            }
+
+            if (cacCd.Any(c => c.ThuTu < cd.ThuTu &&
+                               c.TrangThai != QuyTrinh.HoanThanh))
+            {
+                BaoLoi("Phải hoàn thành các công đoạn trước đó.");
+                return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+            }
+
+            if (cacCd.Any(c => c.TrangThai == QuyTrinh.DangThucHien))
+            {
+                BaoLoi("Đang có công đoạn khác thực hiện, hãy hoàn thành trước.");
+                return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+            }
+
+            cd.TrangThai = QuyTrinh.DangThucHien;
+            cd.ThoiGianBatDau = now;
+
+            if (don.TrangThai == TrangThaiDon.DaXacNhan)
+            {
+                don.TrangThai = TrangThaiDon.DangXuLy;
+                GhiLichSu(don.MaDonGiat, "Đơn chuyển sang Đang xử lý");
+            }
+
+            GhiLichSu(
+                don.MaDonGiat,
+                "Đang thực hiện công đoạn " + cd.TenCongDoan.ToLower());
         }
         else if (hanhDong == "hoanthanh")
         {
-            if (cd.TrangThai != QuyTrinh.DangThucHien) { BaoLoi("Chỉ hoàn thành được công đoạn đang thực hiện."); return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat }); }
-            cd.TrangThai = QuyTrinh.HoanThanh; cd.ThoiGianKetThuc = now;
-            GhiLichSu(don.MaDonGiat, "Hoàn thành công đoạn " + cd.TenCongDoan.ToLower());
+            if (cd.TrangThai != QuyTrinh.DangThucHien)
+            {
+                BaoLoi("Chỉ hoàn thành được công đoạn đang thực hiện.");
+                return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+            }
+
+            cd.TrangThai = QuyTrinh.HoanThanh;
+            cd.ThoiGianKetThuc = now;
+
+            GhiLichSu(
+                don.MaDonGiat,
+                "Hoàn thành công đoạn " + cd.TenCongDoan.ToLower());
+
+            // Kiểm tra tất cả công đoạn đã hoàn thành hay chưa
             if (cacCd.All(c => c.TrangThai == QuyTrinh.HoanThanh))
             {
                 don.TrangThai = TrangThaiDon.ChoGiaoTra;
-                GhiLichSu(don.MaDonGiat, "Hoàn tất xử lý, đơn chờ giao trả");
+
+                vuaChuyenChoGiaoTra = true;
+
+                GhiLichSu(
+                    don.MaDonGiat,
+                    "Hoàn tất xử lý, đơn chờ giao trả");
             }
         }
-        else return BadRequest();
+        else
+        {
+            return BadRequest();
+        }
 
-        // đồng bộ trạng thái phân công
+        // Đồng bộ trạng thái phân công
         foreach (var p in don.PhanCongs)
-            p.TrangThai = cacCd.All(c => c.TrangThai == QuyTrinh.HoanThanh) ? QuyTrinh.HoanThanh
-                        : cacCd.Any(c => c.TrangThai != QuyTrinh.ChuaBatDau) ? QuyTrinh.DangThucHien : QuyTrinh.ChuaBatDau;
-        _db.SaveChanges();
-        ThongBao("Đã cập nhật công đoạn");
-        return RedirectToAction(nameof(CapNhat), new { id = don.MaDonGiat });
+        {
+            p.TrangThai = cacCd.All(c => c.TrangThai == QuyTrinh.HoanThanh)
+                ? QuyTrinh.HoanThanh
+                : cacCd.Any(c => c.TrangThai != QuyTrinh.ChuaBatDau)
+                    ? QuyTrinh.DangThucHien
+                    : QuyTrinh.ChuaBatDau;
+        }
+
+        // Lưu trạng thái đơn hàng và công đoạn trước
+        await _db.SaveChangesAsync();
+
+        // Chỉ gửi email khi đơn vừa chuyển sang Chờ giao trả
+        if (vuaChuyenChoGiaoTra)
+        {
+            if (string.IsNullOrWhiteSpace(don.KhachHang?.Email))
+            {
+                ThongBao(
+                    "Đã hoàn tất xử lý và chuyển đơn sang Chờ giao trả, " +
+                    "nhưng khách hàng chưa có địa chỉ email.");
+            }
+            else
+            {
+                try
+                {
+                    await _emailService.GuiThongBaoDonSanSangAsync(don);
+
+                    ThongBao(
+                        "Đã hoàn tất xử lý và gửi email thông báo cho khách hàng.");
+                }
+                catch (Exception)
+                {
+                    ThongBao(
+                        "Đơn đã chuyển sang Chờ giao trả thành công, " +
+                        "nhưng gửi email thất bại. Vui lòng kiểm tra cấu hình Gmail.");
+                }
+            }
+        }
+        else
+        {
+            ThongBao("Đã cập nhật công đoạn");
+        }
+
+        return RedirectToAction(
+            nameof(CapNhat),
+            new { id = don.MaDonGiat });
     }
+
 
     [PhanQuyen(VaiTroConst.Admin)]
     [HttpPost]
