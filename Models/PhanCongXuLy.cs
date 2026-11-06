@@ -1,56 +1,18 @@
-﻿// Họ và tên: Lê Hoàng Anh
-// Mã sinh viên: 23103100214
-// Nội dung thực hiện: Tạo Entity PhanCongXuLy
-
+// Họ và tên: Trần Văn Bình
+// Mã sinh viên: 23103100179
+// Nội dung thực hiện: Khai báo entity PhanCongXuLy.
 using System.ComponentModel.DataAnnotations;
-using System;
+namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
 
-namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+public class PhanCongXuLy
 {
-    public static class TrangThaiPhanCong
-    {
-        public const string ChuaBatDau = "ChuaBatDau";
-        public const string DangXuLy = "DangXuLy";
-        public const string HoanThanh = "HoanThanh";
-        public const string DaHuy = "DaHuy";
-
-        public static bool HopLe(string trangThai)
-        {
-            return trangThai == ChuaBatDau
-                || trangThai == DangXuLy
-                || trangThai == HoanThanh
-                || trangThai == DaHuy;
-        }
-    }
-    public class PhanCongXuLy
-    {
-        [Key]
-        [Display(Name = "Mã phân công")]
-        public int MaPhanCong { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Mã đơn giặt không hợp lệ")]
-        [Display(Name = "Mã đơn giặt")]
-        public int MaDonGiat {  get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Mã nhân viên không hợp lệ")]
-        [Display(Name = "Mã nhân viên")]
-        public int MaNhanVien {  get; set; }
-
-        [Display(Name = "Ngày phân công")]
-        public DateTime NgayPhanCong { get; set; } = DateTime.Now;
-
-        [Required(ErrorMessage = "Nội dung công việc là bắt buộc")]
-        [StringLength(300, ErrorMessage = "Nội dung tối đa 300 ký tự")]
-        [Display(Name = "Nội dung công việc")]
-        public string NoiDungCongViec { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Trạng thái phân công là bắt buộc")]
-        [StringLength(30)]
-        [Display(Name = "Trạng thái")]
-        public string TrangThai { get; set; } = TrangThaiPhanCong.ChuaBatDau;
-
-        [StringLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
-        [Display(Name = "Ghi chú")]
-        public string? GhiChu {  get; set; }
-    }
+    [Key] public int MaPhanCong { get; set; }
+    public int MaDonGiat { get; set; }
+    public DonGiat? DonGiat { get; set; }
+    public int MaNhanVien { get; set; }
+    public NhanVien? NhanVien { get; set; }
+    public DateTime NgayPhanCong { get; set; } = DateTime.Now;
+    [StringLength(300)] public string? NoiDungCongViec { get; set; }
+    [StringLength(30)] public string TrangThai { get; set; } = "Chưa bắt đầu";
+    [StringLength(300)] public string? GhiChu { get; set; }
 }

@@ -1,0 +1,18 @@
+@* Họ và tên: Nghiêm Xuân Bằng | Mã sinh viên: ..................... | Nội dung thực hiện: Thanh tìm kiếm, lọc và sắp xếp dùng chung cho các trang danh sách. *@
+@model FilterBarVM
+<form method="get" class="filterbar">
+  @foreach (var h in Model.Hidden) { <input type="hidden" name="@h.Key" value="@h.Value" /> }
+  <div class="search"><i class="bi bi-search"></i><input name="q" value="@Model.Q" placeholder="@Model.Placeholder" /></div>
+  @foreach (var s in Model.Selects)
+  {
+    <select name="@s.Name" class="sel">
+      <option value="">@s.AllText</option>
+      @foreach (var o in s.Opts) { <option value="@o.Value" selected="@(s.Selected == o.Value)">@o.Text</option> }
+    </select>
+  }
+  @if (Model.ShowDate) { <input type="date" name="ngay" value="@Model.Ngay" class="sel" style="min-width:140px" /> }
+  <select name="sort" class="sel">
+    @foreach (var o in Model.Sorts) { <option value="@o.Value" selected="@(Model.Sort == o.Value)">Sắp xếp: @o.Text</option> }
+  </select>
+  <button class="btn-filter"><i class="bi bi-funnel me-1"></i> Bộ lọc</button>
+</form>

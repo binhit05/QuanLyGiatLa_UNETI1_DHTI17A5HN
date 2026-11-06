@@ -1,42 +1,17 @@
-﻿// Họ và tên: Lê Hoàng Anh
-// Mã sinh viên: 23103100214
-// Nội dung thực hiện: Tạo Entity GiaoTra
-
+// Họ và tên: Lê Hoàng Anh
+// Mã sinh viên: .....................
+// Nội dung thực hiện: Khai báo entity GiaoTra.
 using System.ComponentModel.DataAnnotations;
-using System;
+namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;
 
-namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models
+public class GiaoTra
 {
-    public class GiaoTra
-    {
-        [Key]
-        [Display(Name = "Mã giao trả")]
-        public int MaGiaoTra { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Mã đơn giặt không hợp lệ")]
-        [Display(Name = "Mã đơn giặt")]
-        public int MaDonGiat { get; set; }
-
-        [Display(Name = "Ngày giao trả")]
-        public DateTime NgayGiaoTra { get; set; } = DateTime.Now;
-
-        [Required(ErrorMessage = "Người giao là bắt buộc")]
-        [StringLength(100, ErrorMessage = "Tên người giao tối đa 100 ký tự")]
-        [Display(Name = "Người giao")]
-        public string NguoiGiao { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Người nhận là bắt buộc")]
-        [StringLength(100, ErrorMessage = "Tên người nhận tối đa 100 ký tự")]
-        [Display(Name = "Người nhận")]
-        public string NguoiNhan { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Phương thức giao trả là bắt buộc")]
-        [StringLength(50, ErrorMessage = "Phương thức tối đa 50 ký tự")]
-        [Display(Name = "Phương thức giao trả")]
-        public string PhuongThucGiaoTra { get; set; } = string.Empty;
-
-        [StringLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
-        [Display(Name = "Ghi chú")]
-        public string? GhiChu { get; set; }
-    }
+    [Key] public int MaGiaoTra { get; set; }
+    public int MaDonGiat { get; set; }
+    public DonGiat? DonGiat { get; set; }
+    public DateTime NgayGiaoTra { get; set; } = DateTime.Now;
+    [StringLength(100)] public string? NguoiGiao { get; set; }
+    [StringLength(100)] public string? NguoiNhan { get; set; }
+    [StringLength(50)] public string? HinhThucNhan { get; set; }
+    [StringLength(300)] public string? GhiChu { get; set; }
 }

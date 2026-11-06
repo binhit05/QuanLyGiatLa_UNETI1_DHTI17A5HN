@@ -1,0 +1,27 @@
+@* Họ và tên: Nghiêm Xuân Bằng | Mã sinh viên: ..................... | Nội dung thực hiện: Phân trang dùng chung, giữ nguyên điều kiện tìm kiếm/lọc/sắp xếp khi chuyển trang. *@
+@model IPaged
+@{
+    var rv = new RouteValueDictionary(Context.Request.Query.ToDictionary(k => k.Key, v => (object?)v.Value.ToString()));
+    string Link(int p) { rv["page"] = p; return Url.Action(null, null, rv) ?? "#"; }
+    var pages = new List<int>();
+    for (int p = 1; p <= Model.TotalPages; p++)
+    {
+        if (p <= 2 || p == Model.TotalPages || Math.Abs(p - Model.Page) <= 1) { pages.Add(p); }
+    }
+    int tu = Model.TotalItems == 0 ? 0 : (Model.Page - 1) * Model.PageSize + 1;
+    int den = (Model.Page - 1) * Model.PageSize + Model.CountOnPage;
+    int truoc = 0;
+}
+<div class="pager">
+  <span>Hiển thị <b>@tu - @den</b> trong <b>@Model.TotalItems</b> kết quả</span>
+  <div class="pg">
+    <a class="@(Model.Page <= 1 ? "off" : "")" href="@Link(Model.Page - 1)"><i class="bi bi-chevron-left"></i></a>
+    @foreach (var p in pages)
+    {
+      if (p - truoc > 1) { <span class="dots">…</span> }
+      <a class="@(p == Model.Page ? "on" : "")" href="@Link(p)">@p</a>
+      truoc = p;
+    }
+    <a class="@(Model.Page >= Model.TotalPages ? "off" : "")" href="@Link(Model.Page + 1)"><i class="bi bi-chevron-right"></i></a>
+  </div>
+</div>
