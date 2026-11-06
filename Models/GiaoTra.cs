@@ -1,5 +1,5 @@
 // Họ và tên: Lê Hoàng Anh
-// Mã sinh viên: .....................
+// Mã sinh viên: 23103100214
 // Nội dung thực hiện: Khai báo entity GiaoTra.
 using System.ComponentModel.DataAnnotations;
 namespace QuanLyGiatLa_UNETI1_DHTI17A5HN.Models;

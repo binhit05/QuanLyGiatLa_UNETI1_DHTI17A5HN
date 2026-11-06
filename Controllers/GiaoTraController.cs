@@ -1,5 +1,5 @@
 // Họ và tên: Lê Hoàng Anh
-// Mã sinh viên: .....................
+// Mã sinh viên: 23103100214
 // Nội dung thực hiện: Ghi nhận giao trả đồ cho khách hàng.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
